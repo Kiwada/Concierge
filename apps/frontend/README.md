@@ -41,6 +41,12 @@ Importante:
 
 ## Como rodar local
 
+Se voce estiver na raiz do repositorio `concicerge`, entre em `apps/frontend` antes dos comandos:
+
+```bash
+cd apps/frontend
+```
+
 1. Instalar dependências:
 
 ```bash
@@ -93,13 +99,13 @@ Objetivo: bloquear merge com erro antes do deploy.
 
 ## Deploy no Coolify + Traefik
 
-### 1. Criar aplicação no Coolify
+### 1. Criar aplicacao no Coolify
 
 - New Resource -> Application
 - Source: GitHub repo
 - Branch: `main` (produção)
 - Build Pack: `Dockerfile`
-- Root Directory: `/` (ou `/frontend` se virar monorepo)
+- Root Directory: `/apps/frontend`
 - Port: `80`
 - Auto Deploy: habilitado
 
@@ -107,14 +113,14 @@ Objetivo: bloquear merge com erro antes do deploy.
 
 Configure como build vars/env do app:
 
-- `VITE_API_URL=https://api.conciergehub.com`
-- `VITE_WS_URL=wss://chat.conciergehub.com`
+- `VITE_API_URL=https://api.conciergehub.com.br`
+- `VITE_WS_URL=wss://chat.conciergehub.com.br`
 
 ### 3. Domínio e HTTPS
 
 No app do Coolify:
 
-- Domain: `app.conciergehub.com`
+- Domain: `app.conciergehub.com.br`
 - Force HTTPS: ligado
 - Certificado: automático (Let's Encrypt via Traefik)
 
@@ -127,7 +133,7 @@ DNS:
 Crie um segundo app no Coolify:
 
 - Branch `dev`
-- Domínio `staging.conciergehub.com`
+- Domínio `staging.conciergehub.com.br`
 
 Assim, `main` e `dev` ficam isolados.
 
