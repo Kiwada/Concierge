@@ -8,7 +8,7 @@ function App() {
     return (
         <>
             <Header />
-            <Banner src="./banner.png" alt="Banner" />
+            <Banner src="./Banner.png" alt="Banner" />
             <MovieSection />
             <Banner src="./combo.png" alt="Combo" />  
             <Newsletter/>      
