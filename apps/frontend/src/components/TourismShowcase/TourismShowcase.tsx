@@ -9,8 +9,8 @@ const TourismShowcase = () => {
         <div className={styles.visualTop}>
           <div className={styles.blobLarge}>
             <img
-              src="/assets/turismo/hotel.jpg"
-              alt="Vista de hospedagem em destino turistico"
+              src="/assets/turismo/delta-ambiental.jpg"
+              alt="Paisagem da area de protecao ambiental do Delta"
               className={styles.blobImage}
             />
           </div>
@@ -65,8 +65,8 @@ const TourismShowcase = () => {
         <div className={styles.visualBottom}>
           <div className={styles.blobSmall}>
             <img
-              src="/assets/turismo/lencois.jpg"
-              alt="Paisagem de dunas e lagoas"
+              src="/assets/turismo/melancieiras.jpg"
+              alt="Paisagem em Melancieiras no Delta do Parnaiba"
               className={styles.blobImage}
             />
           </div>
