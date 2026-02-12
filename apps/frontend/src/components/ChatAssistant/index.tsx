@@ -63,7 +63,7 @@ const ChatAssistant = () => {
               <FiMinus />
             </button>
             <div className={styles.avatarWrap}>
-              <img src="/Logo.png" alt="Assistente Lia" className={styles.avatar} />
+              <img src="/loira.png" alt="Assistente Lia" className={styles.avatar} />
               <span className={styles.onlineDot} />
             </div>
             <strong className={styles.title}>Lia Concierge</strong>
@@ -114,7 +114,7 @@ const ChatAssistant = () => {
           onClick={toggleOpen}
           aria-label="Abrir assistente"
         >
-          <img src="/Logo.png" alt="Abrir chat da Lia" className={styles.floatingAvatar} />
+          <img src="/loira.png" alt="Abrir chat da Lia" className={styles.floatingAvatar} />
           {unreadCount > 0 && <span className={styles.badge}>{unreadCount}</span>}
         </button>
       )}

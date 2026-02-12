@@ -4,6 +4,38 @@
   background: #f7f4ef;
 }
 
+.reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 1.05s ease, transform 1.05s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+.isVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.delay1 {
+  transition-delay: 90ms;
+}
+
+.delay2 {
+  transition-delay: 190ms;
+}
+
+.delay3 {
+  transition-delay: 290ms;
+}
+
+.delay4 {
+  transition-delay: 390ms;
+}
+
+.delay5 {
+  transition-delay: 490ms;
+}
+
 .wave {
   height: 26px;
   opacity: 0.45;
@@ -29,7 +61,16 @@
 
 .blockBottom {
   background: #eadbc8;
-  overflow: hidden;
+  overflow: visible;
+  max-width: 1180px;
+  width: calc(100% - 2.5rem);
+  margin: 0 auto;
+  padding-top: 2.2rem;
+  padding-bottom: 2.4rem;
+  padding-left: clamp(1rem, 3.2vw, 2.6rem);
+  padding-right: clamp(1rem, 3.2vw, 2.6rem);
+  gap: clamp(1.2rem, 2.5vw, 2.6rem);
+  border-radius: 1.4rem;
 }
 
 .visualTop {
@@ -75,6 +116,13 @@
   border-radius: 45% 55% 60% 40% / 55% 45% 55% 45%;
   background: #dfd3c5;
   box-shadow: 0 22px 36px rgba(0, 0, 0, 0.16);
+  transition: transform 0.55s ease, box-shadow 0.55s ease;
+}
+
+.blobLarge:hover,
+.blobSmall:hover {
+  transform: scale(1.015);
+  box-shadow: 0 24px 40px rgba(0, 0, 0, 0.19);
 }
 
 .blobLarge {
@@ -83,7 +131,7 @@
 }
 
 .blobSmall {
-  width: min(29rem, 100%);
+  width: min(23rem, 100%);
   aspect-ratio: 10 / 9;
   margin-left: auto;
 }
@@ -113,10 +161,16 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   cursor: pointer;
+  transition: transform 0.38s ease, filter 0.38s ease;
 }
 
 .ctaButton:hover {
+  transform: translateY(-1px);
   filter: brightness(1.1);
+}
+
+.ctaButton:active {
+  transform: translateY(0);
 }
 
 .watermark {
@@ -130,34 +184,34 @@
   letter-spacing: 0.08em;
   pointer-events: none;
   user-select: none;
+  animation: watermarkFloat 12s ease-in-out infinite alternate;
 }
 
 .visualBottom {
   position: relative;
   z-index: 2;
-  min-height: 19rem;
+  min-height: 17rem;
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: flex-end;
 }
 
 .bird {
   position: absolute;
-  width: clamp(6rem, 12vw, 9.5rem);
-  bottom: -0.7rem;
-  left: 50%;
-  transform: translateX(-35%);
+  width: clamp(9rem, 16vw, 13rem);
+  bottom: -1.6rem;
+  right: -0.55rem;
   filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.2));
+  z-index: 3;
 }
 
-.leaf {
-  position: absolute;
-  width: clamp(5rem, 11vw, 8.5rem);
-  left: -0.6rem;
-  top: 2.8rem;
-  transform: rotate(-12deg);
-  opacity: 0.26;
-  pointer-events: none;
+@keyframes watermarkFloat {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(4px);
+  }
 }
 
 @media (max-width: 980px) {
@@ -165,6 +219,12 @@
     grid-template-columns: 1fr;
     gap: 1.6rem;
     padding: 2.1rem 1rem 2.5rem;
+  }
+
+  .blockBottom {
+    width: calc(100% - 2rem);
+    padding-top: 1.8rem;
+    padding-bottom: 2rem;
   }
 
   .visualTop {
@@ -178,7 +238,7 @@
   .visualBottom {
     order: 1;
     justify-content: center;
-    min-height: 15rem;
+    min-height: 14rem;
   }
 
   .contentBottom {
@@ -197,6 +257,13 @@
 }
 
 @media (max-width: 640px) {
+  .blockBottom {
+    width: calc(100% - 1.2rem);
+    border-radius: 1rem;
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+  }
+
   .title,
   .titleBottom {
     font-size: clamp(1.45rem, 9vw, 2rem);
@@ -212,8 +279,21 @@
   }
 
   .bird {
-    width: 6.2rem;
-    bottom: -0.3rem;
-    transform: translateX(-50%);
+    width: 8.6rem;
+    bottom: -1rem;
+    right: -0.1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .blobLarge,
+  .blobSmall,
+  .ctaButton,
+  .watermark {
+    transition: none;
+    animation: none;
+    transform: none;
+    opacity: 1;
   }
 }
