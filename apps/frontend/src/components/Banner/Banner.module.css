@@ -1,4 +1,8 @@
 .banner {
     width: 100%;
+    height: clamp(12rem, 34vw, 24rem);
+    object-fit: cover;
+    object-position: 50% 20%;
+    display: block;
     margin-bottom: -7px;
 }

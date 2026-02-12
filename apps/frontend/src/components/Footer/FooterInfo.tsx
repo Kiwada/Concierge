@@ -4,10 +4,10 @@ import styles from "./Footer.module.css"
 const FooterInfo = () => {
   return (
     <div className={styles.funcionamento}>
-       <h4 className={styles.titulo}>Funcionamento</h4>
-       <span>Segunda à Sexta: 10:00 - 18:00</span>
-       <span>Sábado e Domingo: 10:00 - 16:00</span>
-       <span>Feriados: 10:00 - 16:00</span>
+       <h4 className={styles.titulo}>IA para Turismo no Piaui</h4>
+       <span>Recomendacoes inteligentes para cada perfil de turista</span>
+       <span>Roteiros personalizados entre litoral, delta e serra</span>
+       <span>Dicas em tempo real de passeios, gastronomia e hospedagem</span>
     </div>
   )
 }

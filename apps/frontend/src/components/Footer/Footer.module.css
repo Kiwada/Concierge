@@ -2,21 +2,45 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 252px;
+  min-height: 252px;
+  padding: 1.4rem 1rem;
   background-color: var(--preto);
 }
 
 .rodape_informacoes {
   display: flex;
-  align-items: start;
+  align-items: flex-start;
   justify-content: space-around;
-  gap: var(--gap-xl);
-  height: 128px;
+  gap: clamp(1rem, 2.2vw, 2.5rem);
+  width: min(1180px, 100%);
   color: var(--cinza-claro);
+  text-align: center;
+  padding-top: 0.45rem;
 }
 
 .logo {
-  width: 30%;
+  width: min(18rem, 100%);
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  align-self: flex-start;
+  margin-top: 0.2rem;
+}
+
+.logoImage {
+  width: clamp(8.6rem, 12vw, 11rem);
+  height: auto;
+  display: block;
+  margin: 0;
+}
+
+.logoText {
+  margin: 0;
+  max-width: 26rem;
+  text-align: justify;
+  text-align-last: left;
+  line-height: 1.5;
 }
 
 .funcionamento,
@@ -24,8 +48,14 @@
 .redes {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--gap-xs);
   color: var(--cinza-claro);
+}
+
+.redes {
+  align-self: flex-start;
+  margin-top: 0.2rem;
 }
 
 .titulo {
@@ -46,6 +76,7 @@
 
 .icones {
   display: flex;
+  justify-content: center;
   gap: var(--gap-xs);
   color: var(--azul);
   font-size: var(--font-size-m);
@@ -63,4 +94,47 @@
   font-family: var(--fonte-texto);
   font-weight: 400;
   font-size: var(--font-size-m);
+}
+
+@media (max-width: 980px) {
+  .rodape {
+    min-height: 0;
+  }
+
+  .rodape_informacoes {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .rodape {
+    padding: 1.2rem 0.8rem;
+  }
+
+  .rodape_informacoes {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+    padding-top: 0;
+  }
+
+  .redes {
+    align-self: center;
+    margin-top: 0;
+  }
+
+  .logo {
+    width: 100%;
+    align-self: center;
+    margin-top: 0;
+  }
+
+  .logoImage {
+    width: 10.8rem;
+  }
+
+  .desenvolvimento {
+    font-size: 1rem;
+  }
 }

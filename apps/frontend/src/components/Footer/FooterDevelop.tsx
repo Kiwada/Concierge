@@ -2,7 +2,7 @@ import styles from "./Footer.module.css";
 
 const FooterDevelopedBy = () => (
   <div className={styles.desenvolvimento}>
-    <span>Desenvolvido por Kaio. Projeto fictício sem fins comerciais.</span>
+    <span>Desenvolvido por Kaio. Todos os direitos reservados ao autor.</span>
   </div>
 );
 

@@ -1,11 +1,19 @@
 .inputWrapper {
-    width: 40vw;
+    width: clamp(12rem, 40vw, 24rem);
     height: 3rem;
     padding: var(--padding-xs) var(--padding-s);
     border-radius: 8px;
     display: flex;
     align-items: center;
     margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+    .inputWrapper {
+        width: min(100%, 18rem);
+        height: 2.6rem;
+        padding: 0.35rem 0.65rem;
+    }
 }
 
 .primary {

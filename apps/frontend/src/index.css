@@ -51,11 +51,16 @@ body {
   width: 100%;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 
   font-family: var(--fonte-texto);
   font-size: var(--font-size-s);
   font-weight: 400;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 main {
