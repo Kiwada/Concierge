@@ -1,11 +1,11 @@
-# concicerge
+# Concierge
 
 Repositorio principal do projeto Concierge, organizado como monorepo simples para crescer sem bagunca.
 
 ## Estrutura
 
 ```text
-concicerge/
+concierge/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml

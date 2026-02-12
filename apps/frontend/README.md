@@ -1,6 +1,6 @@
 # Concierge Frontend
 
-Frontend baseado no esqueleto do `luz-e-cena`, preparado para deploy automático com **GitHub + Coolify + Traefik (HTTPS)**.
+Frontend do projeto Concierge, preparado para deploy automatico com **GitHub + Coolify + Traefik (HTTPS)**.
 
 ## Stack
 
@@ -41,7 +41,7 @@ Importante:
 
 ## Como rodar local
 
-Se voce estiver na raiz do repositorio `concicerge`, entre em `apps/frontend` antes dos comandos:
+Se voce estiver na raiz do repositorio `Concierge`, entre em `apps/frontend` antes dos comandos:
 
 ```bash
 cd apps/frontend
