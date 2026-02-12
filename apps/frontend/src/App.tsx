@@ -10,12 +10,10 @@ function App() {
     return (
         <>
             <Header />
-            <TourismShowcase />
             <Banner src="./assets/turismo/delta-ambiental.jpg" alt="Paisagem do Delta" />
-            <MovieSection />
-            <Banner src="./assets/turismo/melancieiras.jpg" alt="Paisagem de Melancieiras" />  
-            <Newsletter/>      
-            <Footer />  
+            <TourismShowcase />
+            <Banner src="./assets/turismo/melancieiras.jpg" alt="Paisagem de Melancieiras" />
+            <Footer />
             <ChatAssistant />
         </>
     );
