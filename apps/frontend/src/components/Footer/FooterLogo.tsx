@@ -5,7 +5,7 @@ const FooterLogo = () => {
   return (
     <div className={styles.logo}>
       <Logo
-        src="/Icon.png"
+        src="/icon.png"
         alt="Icon Concierge Hub"
         className={styles.logoImage}
       />
