@@ -11,9 +11,9 @@ function App() {
         <>
             <Header />
             <TourismShowcase />
-            <Banner src="./banner.jpg" alt="Banner" />
+            <Banner src="./assets/turismo/delta-ambiental.jpg" alt="Paisagem do Delta" />
             <MovieSection />
-            <Banner src="./combo.png" alt="Combo" />  
+            <Banner src="./assets/turismo/melancieiras.jpg" alt="Paisagem de Melancieiras" />  
             <Newsletter/>      
             <Footer />  
             <ChatAssistant />
