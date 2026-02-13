@@ -1,8 +1,17 @@
 # Concierge
 
-Repositorio principal do projeto Concierge, organizado como monorepo simples para crescer sem bagunca.
+Plataforma SaaS focada em turismo no Piaui, com recomendacoes turisticas
+assistidas por IA e frontend preparado para operacao em ambiente self-hosted.
 
-## Estrutura
+## Visao geral
+
+Este repositorio centraliza o frontend do projeto Concierge e prioriza:
+
+- evolucao continua com fluxo de branches
+- qualidade automatizada via CI
+- deploy continuo em VPS com Coolify + Traefik
+
+## Estrutura do repositorio
 
 ```text
 concierge/
@@ -12,20 +21,37 @@ concierge/
 ├── apps/
 │   └── frontend/
 │       ├── Dockerfile
-│       ├── .env.example
 │       ├── nginx/
+│       ├── public/
 │       ├── src/
+│       ├── .env.example
 │       └── package.json
 └── README.md
 ```
 
+## Stack
+
+- React 19 + TypeScript + Vite
+- CSS Modules
+- Axios
+- Docker multi-stage + Nginx (SPA)
+- GitHub Actions (CI)
+- Coolify self-hosted + Traefik (CD e HTTPS)
+
 ## Convencao de branches
 
 - `main`: producao
-- `dev`: homologacao
-- `feature/*`: desenvolvimento
+- `dev`: homologacao (staging)
+- `feature/*`: desenvolvimento de funcionalidades
 
-## Rodar frontend local
+## Ambiente local
+
+### Pre-requisitos
+
+- Node.js 22
+- npm 10+
+
+### Execucao
 
 ```bash
 cd apps/frontend
@@ -35,28 +61,100 @@ npm run server
 npm run dev
 ```
 
-## CI
+Aplicacao local: `http://localhost:5173`
 
-Workflow em `.github/workflows/ci.yml`:
+### Scripts principais
 
-- executa em `push` e `pull_request` de `main` e `dev`
-- valida apenas mudancas em `apps/frontend/**`
-- roda `npm ci`, `npm run lint` e `npm run build`
+- `npm run dev`: desenvolvimento
+- `npm run build`: build de producao
+- `npm run preview`: preview local do build
+- `npm run lint`: validacao estatica
+- `npm run server`: API fake local (`db.json`, porta `3001`)
 
-## Deploy no Coolify (self-hosted)
+## Variaveis de ambiente (frontend)
 
-Para criar a aplicacao frontend:
+Arquivo base: `apps/frontend/.env.example`
 
-- Source: este repositorio
-- Branch: `main`
+- `VITE_API_URL`
+- `VITE_WS_URL`
+
+Importante: variaveis `VITE_*` sao publicas no bundle final.
+
+## CI/CD
+
+### CI (GitHub Actions)
+
+Workflow: `.github/workflows/ci.yml`
+
+Disparos:
+
+- `push` em `main` e `dev`
+- `pull_request` para `main` e `dev`
+- somente quando ha mudancas em `apps/frontend/**` ou no proprio workflow
+
+Etapas:
+
+1. `npm ci`
+2. `npm run lint`
+3. `npm run build`
+
+Objetivo: bloquear integracoes com erro antes do deploy.
+
+### CD (Coolify + Traefik)
+
+Fluxo de entrega:
+
+`git push` -> GitHub Actions (CI) -> Coolify (build/deploy) -> Traefik (HTTPS)
+
+Configuracao recomendada do app no Coolify:
+
+- Source: `Kiwada/Concierge`
 - Build Pack: `Dockerfile`
-- Root Directory: `/apps/frontend`
-- Dockerfile path: `./Dockerfile`
-- Port: `80`
-- Domain: `app.conciergehub.com.br`
-- Force HTTPS: ligado
+- Base Directory: `/apps/frontend`
+- Dockerfile path: `/Dockerfile`
+- Exposed Port: `80`
+- Auto Deploy: habilitado
 
-Variaveis de build (publicas no bundle):
+## Infraestrutura (VPS self-hosted)
 
-- `VITE_API_URL=https://api.conciergehub.com.br`
-- `VITE_WS_URL=wss://chat.conciergehub.com.br`
+Arquitetura operacional:
+
+1. VPS Linux hospeda Docker e Coolify
+2. Coolify orquestra build e ciclo de vida dos containers
+3. Traefik atua como reverse proxy e gerencia certificados HTTPS
+4. Frontend roda em container Nginx (SPA) publicado via dominio
+
+Topologia simplificada:
+
+```text
+GitHub Repo (main/dev)
+        |
+        v
+GitHub Actions (CI: lint + build)
+        |
+        v
+Coolify (CD) on VPS
+        |
+        v
+Traefik (80/443 + TLS)
+        |
+        v
+Frontend Nginx Container
+```
+
+Ambientes sugeridos:
+
+- `dev` -> `staging.conciergehub.com.br`
+- `main` -> dominio de producao
+
+Atencao: o branch configurado no Coolify precisa ser o mesmo branch do push.
+
+## Notas operacionais
+
+- Linux em producao e case-sensitive para nomes de arquivos.
+- Em assets de `public/`, prefira caminhos absolutos (`/assets/...`).
+- Use historico de deployments no Coolify para rollback rapido.
+
+## Documentacao complementar
+
+- `apps/frontend/README.md`
