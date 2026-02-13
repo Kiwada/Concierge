@@ -33,7 +33,6 @@ concierge/
 
 - React 19 + TypeScript + Vite
 - CSS Modules
-- Axios
 - Docker multi-stage + Nginx (SPA)
 - GitHub Actions (CI)
 - Coolify self-hosted + Traefik (CD e HTTPS)
@@ -56,8 +55,6 @@ concierge/
 ```bash
 cd apps/frontend
 npm install
-cp .env.example .env
-npm run server
 npm run dev
 ```
 
@@ -69,16 +66,13 @@ Aplicacao local: `http://localhost:5173`
 - `npm run build`: build de producao
 - `npm run preview`: preview local do build
 - `npm run lint`: validacao estatica
-- `npm run server`: API fake local (`db.json`, porta `3001`)
 
 ## Variaveis de ambiente (frontend)
 
 Arquivo base: `apps/frontend/.env.example`
 
-- `VITE_API_URL`
-- `VITE_WS_URL`
-
-Importante: variaveis `VITE_*` sao publicas no bundle final.
+No estado atual do frontend, nao ha variaveis obrigatorias para execucao local.
+As variaveis `VITE_*` podem ser usadas futuramente para integracoes publicas.
 
 ## CI/CD
 
