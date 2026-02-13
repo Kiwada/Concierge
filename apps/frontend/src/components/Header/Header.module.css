@@ -154,6 +154,15 @@
   transform: translateY(-1px);
 }
 
+.mobileSearchToggle {
+  display: none;
+}
+
+.mobileSearchToggleActive {
+  background: #f43f5e;
+  color: #ffffff;
+}
+
 .compactSearch {
   flex: 0 0 auto;
   width: 0;
@@ -236,6 +245,10 @@
   pointer-events: none;
   transform: translateY(-8px) scale(0.985);
 }
+
+.mobileSearchOpen {}
+
+.mobileSearchClosed {}
 
 .compact .primaryNav {
   display: none;
@@ -337,15 +350,33 @@
     display: none;
   }
 
-  .searchBarHidden {
+  .mobileSearchToggle {
+    display: inline-flex;
+  }
+
+  .mobileSearchOpen,
+  .mobileSearchOpen.searchBarHidden {
     opacity: 1;
     max-height: 20rem;
-    margin-top: 1rem;
+    margin-top: 0.75rem;
     padding: 0.45rem;
     border-color: #e5e7eb;
     box-shadow: 0 8px 24px rgba(17, 24, 39, 0.08);
     pointer-events: auto;
     transform: none;
+  }
+
+  .mobileSearchClosed,
+  .mobileSearchClosed.searchBarHidden {
+    opacity: 0;
+    max-height: 0;
+    margin-top: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-color: transparent;
+    box-shadow: none;
+    pointer-events: none;
+    transform: translateY(-8px) scale(0.985);
   }
 
   .topBar {

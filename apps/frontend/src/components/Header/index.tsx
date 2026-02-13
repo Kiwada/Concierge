@@ -12,6 +12,7 @@ const navItems = [
 const Header = () => {
   const [activeNav, setActiveNav] = useState<(typeof navItems)[number]["id"]>("home");
   const [isCompact, setIsCompact] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   useEffect(() => {
     const COMPACT_ENTER_Y = 92;
@@ -38,6 +39,18 @@ const Header = () => {
       window.removeEventListener("scroll", onScroll);
       if (rafId) window.cancelAnimationFrame(rafId);
     };
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth > 860) {
+        setIsMobileSearchOpen(false);
+      }
+    };
+
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   const activeIndex = useMemo(
@@ -98,6 +111,18 @@ const Header = () => {
         </button>
 
         <div className={styles.topActions}>
+          <button
+            type="button"
+            className={`${styles.iconCircle} ${styles.mobileSearchToggle} ${
+              isMobileSearchOpen ? styles.mobileSearchToggleActive : ""
+            }`}
+            aria-label={isMobileSearchOpen ? "Fechar busca" : "Abrir busca"}
+            aria-expanded={isMobileSearchOpen}
+            aria-controls="header-search-form"
+            onClick={() => setIsMobileSearchOpen((prev) => !prev)}
+          >
+            <FiSearch />
+          </button>
           <button type="button" className={styles.hostButton}>
             Torne-se parceiro
           </button>
@@ -111,7 +136,10 @@ const Header = () => {
       </div>
 
       <form
-        className={`${styles.searchBar} ${isCompact ? styles.searchBarHidden : ""}`}
+        id="header-search-form"
+        className={`${styles.searchBar} ${isCompact ? styles.searchBarHidden : ""} ${
+          isMobileSearchOpen ? styles.mobileSearchOpen : styles.mobileSearchClosed
+        }`}
         role="search"
         onSubmit={(event) => event.preventDefault()}
       >
