@@ -8,7 +8,6 @@ Frontend do projeto Concierge, preparado para deploy automatico com **GitHub + C
 - TypeScript
 - Vite
 - CSS Modules
-- Axios
 - Docker + Nginx (produção)
 
 ## Estrutura recomendada de branches
@@ -21,15 +20,11 @@ Frontend do projeto Concierge, preparado para deploy automatico com **GitHub + C
 
 Arquivo base: `.env.example`
 
-```bash
-VITE_API_URL=http://localhost:3001
-VITE_WS_URL=ws://localhost:3002
-```
-
 Importante:
 
 - Tudo que começa com `VITE_` fica público no bundle.
 - Nunca coloque segredos reais no frontend.
+- No estado atual do app, não há variável obrigatória para rodar localmente.
 
 ## Scripts
 
@@ -37,7 +32,6 @@ Importante:
 - `npm run build`: gera build de produção
 - `npm run preview`: serve o build localmente
 - `npm run lint`: valida qualidade de código
-- `npm run server`: sobe JSON Server com `db.json` na porta `3001`
 
 ## Como rodar local
 
@@ -53,19 +47,13 @@ cd apps/frontend
 npm install
 ```
 
-2. Criar `.env` a partir do exemplo:
+2. (Opcional) Criar `.env` a partir do exemplo:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Em um terminal, subir API fake:
-
-```bash
-npm run server
-```
-
-4. Em outro terminal, subir frontend:
+3. Subir frontend:
 
 ```bash
 npm run dev
@@ -111,7 +99,7 @@ Objetivo: bloquear merge com erro antes do deploy.
 
 ### 2. Variáveis no Coolify
 
-Configure como build vars/env do app:
+Configure build vars/env somente quando houver backend/API integrado:
 
 - `VITE_API_URL=https://api.conciergehub.com.br`
 - `VITE_WS_URL=wss://chat.conciergehub.com.br`
