@@ -140,6 +140,11 @@
   color: #4a5868;
 }
 
+.typing {
+  font-style: italic;
+  opacity: 0.8;
+}
+
 .user {
   align-self: flex-end;
   background: #d71b33;

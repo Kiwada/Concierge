@@ -24,7 +24,9 @@ Importante:
 
 - Tudo que começa com `VITE_` fica público no bundle.
 - Nunca coloque segredos reais no frontend.
-- No estado atual do app, não há variável obrigatória para rodar localmente.
+- Para integrar o `ChatAssistant` com n8n, configure:
+  - `VITE_N8N_CHAT_WEBHOOK_URL`
+  - `VITE_CHAT_CHANNEL` (opcional, ex.: `web`)
 
 ## Scripts
 
@@ -101,6 +103,8 @@ Objetivo: bloquear merge com erro antes do deploy.
 
 Configure build vars/env somente quando houver backend/API integrado:
 
+- `VITE_N8N_CHAT_WEBHOOK_URL=https://n8n.conciergehub.com.br/webhook/chat-assistant`
+- `VITE_CHAT_CHANNEL=web`
 - `VITE_API_URL=https://api.conciergehub.com.br`
 - `VITE_WS_URL=wss://chat.conciergehub.com.br`
 

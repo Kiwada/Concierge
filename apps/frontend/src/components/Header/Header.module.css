@@ -42,9 +42,9 @@
 }
 
 .brandText {
-  font-size: clamp(0.94rem, 1.35vw, 1.32rem);
+  font-size: clamp(1.2rem, 1.7vw, 1.62rem);
   font-weight: 700;
-  line-height: 1.08;
+  line-height: 1;
   letter-spacing: 0.01em;
   color: #ff2f63;
   background: linear-gradient(120deg, #ff8ea8 0%, #ff4f79 45%, #ef1b4f 100%);
@@ -60,7 +60,6 @@
   align-items: center;
   gap: 0.7rem;
   padding-bottom: 0.15rem;
-  margin-inline: auto;
 }
 
 .navItem {
@@ -154,15 +153,6 @@
   transform: translateY(-1px);
 }
 
-.mobileSearchToggle {
-  display: none;
-}
-
-.mobileSearchToggleActive {
-  background: #f43f5e;
-  color: #ffffff;
-}
-
 .compactSearch {
   flex: 0 0 auto;
   width: 0;
@@ -246,10 +236,6 @@
   transform: translateY(-8px) scale(0.985);
 }
 
-.mobileSearchOpen {}
-
-.mobileSearchClosed {}
-
 .compact .primaryNav {
   display: none;
 }
@@ -264,7 +250,7 @@
 }
 
 .compact .brandText {
-  font-size: 0.92rem;
+  font-size: 1.14rem;
 }
 
 .compact .topActions {
@@ -350,33 +336,15 @@
     display: none;
   }
 
-  .mobileSearchToggle {
-    display: inline-flex;
-  }
-
-  .mobileSearchOpen,
-  .mobileSearchOpen.searchBarHidden {
+  .searchBarHidden {
     opacity: 1;
     max-height: 20rem;
-    margin-top: 0.75rem;
+    margin-top: 1rem;
     padding: 0.45rem;
     border-color: #e5e7eb;
     box-shadow: 0 8px 24px rgba(17, 24, 39, 0.08);
     pointer-events: auto;
     transform: none;
-  }
-
-  .mobileSearchClosed,
-  .mobileSearchClosed.searchBarHidden {
-    opacity: 0;
-    max-height: 0;
-    margin-top: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    border-color: transparent;
-    box-shadow: none;
-    pointer-events: none;
-    transform: translateY(-8px) scale(0.985);
   }
 
   .topBar {
@@ -390,7 +358,6 @@
     width: 100%;
     justify-content: center;
     flex-wrap: wrap;
-    margin-inline: 0;
   }
 
   .topActions {
@@ -434,7 +401,7 @@
   }
 
   .brandText {
-    font-size: 1.02rem;
+    font-size: 1.18rem;
   }
 
   .navItem {
