@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { FaBellConcierge, FaGlobe, FaHouse, FaUmbrellaBeach } from "react-icons/fa6";
 import { FiMenu, FiSearch } from "react-icons/fi";
+import AuthModal from "../AuthModal";
+import { useAuth } from "../../contexts/AuthContext";
 import styles from "./Header.module.css";
 
 const navItems = [
@@ -10,9 +12,11 @@ const navItems = [
 ];
 
 const Header = () => {
+  const { isAuthenticated, isConfigured, isLoading, signOut, user } = useAuth();
   const [activeNav, setActiveNav] = useState<(typeof navItems)[number]["id"]>("home");
   const [isCompact, setIsCompact] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   useEffect(() => {
     const COMPACT_ENTER_Y = 92;
@@ -58,123 +62,162 @@ const Header = () => {
     [activeNav],
   );
 
+  const profileLabel = useMemo(() => {
+    const metadataName = user?.user_metadata?.full_name;
+    if (typeof metadataName === "string" && metadataName.trim()) {
+      return metadataName.trim();
+    }
+
+    const email = user?.email?.trim();
+    if (!email) return "Conta";
+
+    return email.split("@")[0];
+  }, [user]);
+
   return (
-    <header className={`${styles.header} ${isCompact ? styles.compact : ""}`}>
-      <div className={styles.topBar}>
-        <a href="#" className={styles.brand} aria-label="ConciergeHub">
-          <img
-            src="/icon-concierge.png"
-            alt=""
-            aria-hidden="true"
-            className={styles.brandIcon}
-          />
-          <span className={styles.brandText}>ConciergeHub</span>
-        </a>
+    <>
+      <header className={`${styles.header} ${isCompact ? styles.compact : ""}`}>
+        <div className={styles.topBar}>
+          <a href="#" className={styles.brand} aria-label="ConciergeHub">
+            <img
+              src="/icon-concierge.png"
+              alt=""
+              aria-hidden="true"
+              className={styles.brandIcon}
+            />
+            <span className={styles.brandText}>ConciergeHub</span>
+          </a>
 
-        <nav
-          className={styles.primaryNav}
-          aria-label="Navegação principal"
-          style={{ "--active-index": activeIndex } as CSSProperties}
-        >
-          {navItems.map(({ id, label, icon: Icon }) => (
-            <a
-              key={id}
-              href="#"
-              onClick={(event) => {
-                event.preventDefault();
-                setActiveNav(id);
-              }}
-              className={`${styles.navItem} ${
-                activeNav === id ? styles.navItemActive : ""
-              }`}
-            >
-              <Icon className={styles.navIcon} />
-              <span>{label}</span>
-            </a>
-          ))}
-          <span className={styles.navIndicator} aria-hidden="true" />
-        </nav>
+          <nav
+            className={styles.primaryNav}
+            aria-label="Navegação principal"
+            style={{ "--active-index": activeIndex } as CSSProperties}
+          >
+            {navItems.map(({ id, label, icon: Icon }) => (
+              <a
+                key={id}
+                href="#"
+                onClick={(event) => {
+                  event.preventDefault();
+                  setActiveNav(id);
+                }}
+                className={`${styles.navItem} ${
+                  activeNav === id ? styles.navItemActive : ""
+                }`}
+              >
+                <Icon className={styles.navIcon} />
+                <span>{label}</span>
+              </a>
+            ))}
+            <span className={styles.navIndicator} aria-hidden="true" />
+          </nav>
 
-        <button
-          type="button"
-          className={`${styles.compactSearch} ${
-            isCompact ? styles.compactSearchVisible : ""
-          }`}
-          aria-label="Abrir busca"
-        >
-          <span className={styles.compactSearchText}>
-            Buscar destinos, datas e serviços
-          </span>
-          <span className={styles.compactSearchIcon}>
-            <FiSearch />
-          </span>
-        </button>
-
-        <div className={styles.topActions}>
           <button
             type="button"
-            className={`${styles.iconCircle} ${styles.mobileSearchToggle} ${
-              isMobileSearchOpen ? styles.mobileSearchToggleActive : ""
+            className={`${styles.compactSearch} ${
+              isCompact ? styles.compactSearchVisible : ""
             }`}
-            aria-label={isMobileSearchOpen ? "Fechar busca" : "Abrir busca"}
-            aria-expanded={isMobileSearchOpen}
-            aria-controls="header-search-form"
-            onClick={() => setIsMobileSearchOpen((prev) => !prev)}
+            aria-label="Abrir busca"
           >
+            <span className={styles.compactSearchText}>
+              Buscar destinos, datas e serviços
+            </span>
+            <span className={styles.compactSearchIcon}>
+              <FiSearch />
+            </span>
+          </button>
+
+          <div className={styles.topActions}>
+            <button
+              type="button"
+              className={`${styles.iconCircle} ${styles.mobileSearchToggle} ${
+                isMobileSearchOpen ? styles.mobileSearchToggleActive : ""
+              }`}
+              aria-label={isMobileSearchOpen ? "Fechar busca" : "Abrir busca"}
+              aria-expanded={isMobileSearchOpen}
+              aria-controls="header-search-form"
+              onClick={() => setIsMobileSearchOpen((prev) => !prev)}
+            >
+              <FiSearch />
+            </button>
+            <button type="button" className={styles.hostButton}>
+              Torne-se parceiro
+            </button>
+            {isAuthenticated ? (
+              <div className={styles.authSummary}>
+                <button type="button" className={styles.authButtonLogged}>
+                  {profileLabel}
+                </button>
+                <button
+                  type="button"
+                  className={styles.authLogoutButton}
+                  onClick={() => void signOut()}
+                >
+                  Sair
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className={styles.authButton}
+                onClick={() => setIsAuthModalOpen(true)}
+                disabled={isLoading}
+              >
+                {isLoading ? "Carregando..." : isConfigured ? "Entrar" : "Login"}
+              </button>
+            )}
+            <button type="button" className={styles.iconCircle} aria-label="Idioma">
+              <FaGlobe />
+            </button>
+            <button type="button" className={styles.iconCircle} aria-label="Menu">
+              <FiMenu />
+            </button>
+          </div>
+        </div>
+
+        <form
+          id="header-search-form"
+          className={`${styles.searchBar} ${isCompact ? styles.searchBarHidden : ""} ${
+            isMobileSearchOpen ? styles.mobileSearchOpen : styles.mobileSearchClosed
+          }`}
+          role="search"
+          onSubmit={(event) => event.preventDefault()}
+        >
+          <label className={styles.searchField}>
+            <span className={styles.fieldLabel}>Onde</span>
+            <input
+              type="text"
+              className={styles.fieldInput}
+              placeholder="Buscar destinos"
+            />
+          </label>
+
+          <label className={styles.searchField}>
+            <span className={styles.fieldLabel}>Quando</span>
+            <input
+              type="text"
+              className={styles.fieldInput}
+              placeholder="Insira as datas"
+            />
+          </label>
+
+          <label className={styles.searchField}>
+            <span className={styles.fieldLabel}>Tipo de serviço</span>
+            <input
+              type="text"
+              className={styles.fieldInput}
+              placeholder="Adicionar serviço"
+            />
+          </label>
+
+          <button type="submit" className={styles.searchButton} aria-label="Buscar">
             <FiSearch />
           </button>
-          <button type="button" className={styles.hostButton}>
-            Torne-se parceiro
-          </button>
-          <button type="button" className={styles.iconCircle} aria-label="Idioma">
-            <FaGlobe />
-          </button>
-          <button type="button" className={styles.iconCircle} aria-label="Menu">
-            <FiMenu />
-          </button>
-        </div>
-      </div>
+        </form>
+      </header>
 
-      <form
-        id="header-search-form"
-        className={`${styles.searchBar} ${isCompact ? styles.searchBarHidden : ""} ${
-          isMobileSearchOpen ? styles.mobileSearchOpen : styles.mobileSearchClosed
-        }`}
-        role="search"
-        onSubmit={(event) => event.preventDefault()}
-      >
-        <label className={styles.searchField}>
-          <span className={styles.fieldLabel}>Onde</span>
-          <input
-            type="text"
-            className={styles.fieldInput}
-            placeholder="Buscar destinos"
-          />
-        </label>
-
-        <label className={styles.searchField}>
-          <span className={styles.fieldLabel}>Quando</span>
-          <input
-            type="text"
-            className={styles.fieldInput}
-            placeholder="Insira as datas"
-          />
-        </label>
-
-        <label className={styles.searchField}>
-          <span className={styles.fieldLabel}>Tipo de serviço</span>
-          <input
-            type="text"
-            className={styles.fieldInput}
-            placeholder="Adicionar serviço"
-          />
-        </label>
-
-        <button type="submit" className={styles.searchButton} aria-label="Buscar">
-          <FiSearch />
-        </button>
-      </form>
-    </header>
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+    </>
   );
 };
 

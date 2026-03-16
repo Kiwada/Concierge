@@ -119,6 +119,57 @@
   gap: 0.55rem;
 }
 
+.authButton,
+.authButtonLogged,
+.authLogoutButton {
+  border: 0;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease, background-color 0.2s ease;
+}
+
+.authButton {
+  background: linear-gradient(120deg, #ff8aa4 0%, #f43f5e 46%, #d61f69 100%);
+  color: #ffffff;
+  padding: 0.72rem 1rem;
+  box-shadow: 0 12px 28px rgba(244, 63, 94, 0.22);
+}
+
+.authButton:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.authButtonLogged {
+  background: #ffffff;
+  color: #111827;
+  padding: 0.64rem 0.92rem;
+  border: 1px solid #dbe1ea;
+}
+
+.authLogoutButton {
+  background: transparent;
+  color: #4b5563;
+  padding: 0.64rem 0.72rem;
+}
+
+.authButton:hover,
+.authButtonLogged:hover,
+.authLogoutButton:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+}
+
+.authSummary {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.16rem;
+  border-radius: 999px;
+  background: #f3f4f6;
+}
+
 .hostButton {
   border: 0;
   background: transparent;
@@ -364,6 +415,10 @@
     margin-left: auto;
   }
 
+  .authSummary {
+    order: -1;
+  }
+
   .searchBar {
     border-radius: 1rem;
     grid-template-columns: 1fr;
@@ -402,6 +457,13 @@
 
   .brandText {
     font-size: 1.18rem;
+  }
+
+  .authButton,
+  .authButtonLogged,
+  .authLogoutButton {
+    font-size: 0.88rem;
+    padding: 0.6rem 0.78rem;
   }
 
   .navItem {
