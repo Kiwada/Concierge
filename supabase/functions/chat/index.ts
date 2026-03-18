@@ -12,6 +12,18 @@ type ChatRequest = {
   sessionId?: string;
 };
 
+type UserProfileRow = {
+  full_name: string | null;
+  preferred_language: string | null;
+  origin_city: string | null;
+  interests: string[] | null;
+  travel_style: string[] | null;
+  budget_profile: string | null;
+  companions_summary: string | null;
+  notes: string | null;
+  updated_at: string | null;
+};
+
 const CANDIDATE_REPLY_KEYS = [
   "reply",
   "response",
@@ -47,6 +59,22 @@ const jsonResponse = (body: Record<string, unknown>, status = 200) =>
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
+
+const normalizeStringArray = (value: string[] | null | undefined): string[] => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const pickMetadataString = (value: unknown, key: string): string | null => {
+  if (!isRecord(value)) return null;
+
+  const candidate = value[key];
+  return typeof candidate === "string" && candidate.trim() ? candidate.trim() : null;
+};
 
 const pickString = (
   object: Record<string, unknown>,
@@ -154,6 +182,33 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: "Invalid or expired auth token." }, 401);
   }
 
+  const authenticatedSupabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  });
+
+  const { data: profile, error: profileError } = await authenticatedSupabase
+    .from("user_profiles")
+    .select(
+      "full_name, preferred_language, origin_city, interests, travel_style, budget_profile, companions_summary, notes, updated_at",
+    )
+    .eq("user_id", user.id)
+    .maybeSingle<UserProfileRow>();
+
+  if (profileError) {
+    console.error("profile-lookup-error", profileError);
+  }
+
+  const metadataFullName = pickMetadataString(user.user_metadata, "full_name");
+  const fullName = profile?.full_name?.trim() || metadataFullName || null;
+
   const upstreamResponse = await fetch(N8N_CHAT_WEBHOOK_URL, {
     method: "POST",
     headers: {
@@ -167,6 +222,18 @@ Deno.serve(async (request) => {
       user: {
         id: user.id,
         email: user.email ?? null,
+        fullName,
+      },
+      profile: {
+        exists: Boolean(profile),
+        preferredLanguage: profile?.preferred_language ?? "pt-BR",
+        originCity: profile?.origin_city ?? null,
+        interests: normalizeStringArray(profile?.interests),
+        travelStyle: normalizeStringArray(profile?.travel_style),
+        budgetProfile: profile?.budget_profile ?? null,
+        companionsSummary: profile?.companions_summary ?? null,
+        notes: profile?.notes ?? null,
+        updatedAt: profile?.updated_at ?? null,
       },
     }),
   });
