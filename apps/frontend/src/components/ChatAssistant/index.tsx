@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { IoSend } from "react-icons/io5";
 import { FiMinus } from "react-icons/fi";
 import { sendMessageToAgent } from "../../services/chatAgent";
+import { useAuth } from "../../contexts/AuthContext";
 import styles from "./ChatAssistant.module.css";
 
 interface ChatMessage {
@@ -11,12 +12,9 @@ interface ChatMessage {
 }
 
 const initialAssistantText =
-  "Ola, eu sou Lia, assistente digital. Posso ajudar com reservas, eventos, informacoes do hotel, localizacao e pre-checkin.";
+  "Ola, eu sou Lia, assistente digital. Entre na sua conta para manter o contexto do atendimento e receber respostas personalizadas.";
 
 const SESSION_STORAGE_KEY = "concierge_chat_session_id";
-const CHAT_WEBHOOK_URL = import.meta.env.VITE_N8N_CHAT_WEBHOOK_URL?.trim() ?? "";
-const CHAT_CHANNEL = import.meta.env.VITE_CHAT_CHANNEL?.trim() || "web";
-
 const createSessionId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -25,6 +23,7 @@ const createSessionId = () => {
 };
 
 const ChatAssistant = () => {
+  const { accessToken, isAuthenticated, isConfigured, isLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [unreadCount, setUnreadCount] = useState(1);
@@ -43,7 +42,12 @@ const ChatAssistant = () => {
   const endRef = useRef<HTMLDivElement | null>(null);
 
   const canSend = useMemo(() => input.trim().length > 0, [input]);
-  const connectionLabel = CHAT_WEBHOOK_URL ? "online" : "modo demo";
+  const connectionLabel = useMemo(() => {
+    if (!isConfigured) return "auth indisponivel";
+    if (isLoading) return "verificando";
+    if (!isAuthenticated || !accessToken) return "login necessario";
+    return "autenticado";
+  }, [accessToken, isAuthenticated, isConfigured, isLoading]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -65,6 +69,30 @@ const ChatAssistant = () => {
     const text = input.trim();
     if (!text || isSending) return;
 
+    if (!isConfigured) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `a-${Date.now() + 1}`,
+          author: "assistant",
+          text: "O login ainda nao foi configurado neste ambiente. Defina as variaveis do Supabase para usar o atendimento autenticado.",
+        },
+      ]);
+      return;
+    }
+
+    if (!isAuthenticated || !accessToken) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `a-${Date.now() + 1}`,
+          author: "assistant",
+          text: "Entre na sua conta para conversar com a Lia e manter o contexto do atendimento.",
+        },
+      ]);
+      return;
+    }
+
     const userMessage: ChatMessage = {
       id: `u-${Date.now()}`,
       author: "user",
@@ -75,23 +103,10 @@ const ChatAssistant = () => {
     setInput("");
     setIsSending(true);
 
-    if (!CHAT_WEBHOOK_URL) {
-      const fallbackReply: ChatMessage = {
-        id: `a-${Date.now() + 1}`,
-        author: "assistant",
-        text: "Fluxo n8n nao configurado. Defina VITE_N8N_CHAT_WEBHOOK_URL no ambiente para conectar o agente real.",
-      };
-      setMessages((prev) => [...prev, fallbackReply]);
-      setIsSending(false);
-      return;
-    }
-
     try {
-      const response = await sendMessageToAgent(CHAT_WEBHOOK_URL, {
+      const response = await sendMessageToAgent({
         message: text,
         sessionId,
-        channel: CHAT_CHANNEL,
-        source: "concierge-web",
       });
 
       if (response.sessionId !== sessionId) {
@@ -109,7 +124,10 @@ const ChatAssistant = () => {
       const assistantReply: ChatMessage = {
         id: `a-${Date.now() + 1}`,
         author: "assistant",
-        text: "Nao consegui falar com o agente agora. Tente novamente em instantes.",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Nao consegui falar com o agente agora. Tente novamente em instantes.",
       };
       setMessages((prev) => [...prev, assistantReply]);
       console.error("chat-agent-error", error);
@@ -166,7 +184,11 @@ const ChatAssistant = () => {
               onKeyDown={(event) => {
                 if (event.key === "Enter") sendMessage();
               }}
-              placeholder="Digite sua mensagem"
+              placeholder={
+                isAuthenticated
+                  ? "Digite sua mensagem"
+                  : "Entre para conversar com contexto"
+              }
               className={styles.input}
             />
             <button

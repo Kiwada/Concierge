@@ -24,9 +24,8 @@ Importante:
 
 - Tudo que começa com `VITE_` fica público no bundle.
 - Nunca coloque segredos reais no frontend.
-- Para integrar o `ChatAssistant` com n8n, configure:
-  - `VITE_N8N_CHAT_WEBHOOK_URL`
-  - `VITE_CHAT_CHANNEL` (opcional, ex.: `web`)
+- Para integrar o `ChatAssistant`, configure apenas o frontend com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
+- O webhook do n8n deve ficar como secret server-side na Edge Function `chat`.
 
 ## Scripts
 
@@ -101,12 +100,18 @@ Objetivo: bloquear merge com erro antes do deploy.
 
 ### 2. Variáveis no Coolify
 
-Configure build vars/env somente quando houver backend/API integrado:
+Configure build vars/env do frontend:
 
-- `VITE_N8N_CHAT_WEBHOOK_URL=https://n8n.conciergehub.com.br/webhook/chat-assistant`
-- `VITE_CHAT_CHANNEL=web`
+- `VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co`
+- `VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY`
 - `VITE_API_URL=https://api.conciergehub.com.br`
 - `VITE_WS_URL=wss://chat.conciergehub.com.br`
+
+Configure na Edge Function `chat` os secrets server-side:
+
+- `N8N_CHAT_WEBHOOK_URL=https://n8n.conciergehub.com.br/webhook/chat-assistant`
+- `N8N_CHAT_CHANNEL=web`
+- `N8N_CHAT_SOURCE=concierge-web`
 
 ### 3. Domínio e HTTPS
 

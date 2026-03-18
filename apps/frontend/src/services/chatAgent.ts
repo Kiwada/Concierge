@@ -1,8 +1,8 @@
+import { isSupabaseConfigured, supabase } from "../lib/supabase";
+
 type ChatPayload = {
   message: string;
   sessionId: string;
-  channel: string;
-  source: string;
 };
 
 export type ChatReply = {
@@ -84,36 +84,67 @@ const extractSessionId = (value: unknown): string | null => {
   );
 };
 
-export const sendMessageToAgent = async (
-  webhookUrl: string,
-  payload: ChatPayload,
-): Promise<ChatReply> => {
-  const response = await fetch(webhookUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Falha ao chamar agente (${response.status})`);
+const extractErrorMessage = (value: unknown): string | null => {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
   }
 
-  const contentType = response.headers.get("content-type") ?? "";
+  if (!isRecord(value)) return null;
+
+  return (
+    pickString(value, ["error", "message"]) ??
+    extractErrorMessage(value.error) ??
+    extractErrorMessage(value.message)
+  );
+};
+
+export const sendMessageToAgent = async (payload: ChatPayload): Promise<ChatReply> => {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error(
+      "Supabase nao configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.",
+    );
+  }
+
+  const { data, error, response } = await supabase.functions.invoke("chat", {
+    body: payload,
+  });
+
+  if (error) {
+    let errorMessage = "Nao consegui falar com o agente agora. Tente novamente em instantes.";
+
+    if (response) {
+      const contentType = response.headers.get("content-type") ?? "";
+
+      try {
+        if (contentType.includes("application/json")) {
+          const body = (await response.json()) as unknown;
+          errorMessage = extractErrorMessage(body) || errorMessage;
+        } else {
+          const rawText = (await response.text()).trim();
+          if (rawText) errorMessage = rawText;
+        }
+      } catch {
+        // Keep the default message when the upstream error body is unreadable.
+      }
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  const contentType = response?.headers.get("content-type") ?? "application/json";
 
   if (!contentType.includes("application/json")) {
-    const rawText = (await response.text()).trim();
+    const rawText = typeof data === "string" ? data.trim() : "";
     return {
       reply: rawText || "Mensagem recebida. Em breve retorno com mais detalhes.",
       sessionId: payload.sessionId,
     };
   }
 
-  const body = (await response.json()) as unknown;
+  const body = data as unknown;
   const reply =
     extractReply(body) ||
-    "Recebi sua mensagem, mas o fluxo do n8n nao retornou um texto reconhecivel.";
+    "Recebi sua mensagem, mas o fluxo autenticado nao retornou um texto reconhecivel.";
   const sessionId = extractSessionId(body) || payload.sessionId;
 
   return { reply, sessionId };
