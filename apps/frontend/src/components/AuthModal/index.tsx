@@ -110,18 +110,16 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
           <button
             type="button"
             onClick={() => setMode("sign-in")}
-            className={`${styles.modeButton} ${
-              mode === "sign-in" ? styles.modeButtonActive : ""
-            }`}
+            className={`${styles.modeButton} ${mode === "sign-in" ? styles.modeButtonActive : ""
+              }`}
           >
             Entrar
           </button>
           <button
             type="button"
             onClick={() => setMode("sign-up")}
-            className={`${styles.modeButton} ${
-              mode === "sign-up" ? styles.modeButtonActive : ""
-            }`}
+            className={`${styles.modeButton} ${mode === "sign-up" ? styles.modeButtonActive : ""
+              }`}
           >
             Criar conta
           </button>
