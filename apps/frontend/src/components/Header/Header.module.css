@@ -1,28 +1,43 @@
-.header {
+.compactSentinel {
+  height: 5.75rem;
+  margin-bottom: -5.75rem;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.headerShell {
   position: sticky;
   top: 0;
   z-index: 1200;
-  background: #f6f6f6;
-  border-bottom: 1px solid #e3e3e3;
-  padding: 0.8rem 1rem 1.35rem;
-  transition: background-color 0.35s ease, box-shadow 0.35s ease, padding 0.35s ease;
+  height: 5.35rem;
+}
+
+.header {
+  position: relative;
+  height: 100%;
+  background: rgba(246, 246, 246, 0.92);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(227, 227, 227, 0.88);
+  transition: background-color var(--motion-base) var(--ease-gentle),
+    box-shadow var(--motion-base) var(--ease-soft-out),
+    border-color var(--motion-base) var(--ease-gentle);
 }
 
 .compact {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom-color: rgba(229, 231, 235, 0.95);
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
-  padding-top: 0.45rem;
-  padding-bottom: 0.45rem;
 }
 
 .topBar {
-  width: min(1200px, 100%);
+  width: min(1200px, calc(100% - 1.6rem));
+  height: 100%;
   margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  transition: gap 0.3s ease;
+  transition: gap var(--motion-base) var(--ease-gentle);
 }
 
 .brand {
@@ -30,6 +45,7 @@
   align-items: center;
   gap: 0.48rem;
   text-decoration: none;
+  flex: 0 0 auto;
 }
 
 .brandIcon {
@@ -38,7 +54,8 @@
   object-fit: contain;
   display: block;
   border-radius: 999px;
-  transition: width 0.3s ease, height 0.3s ease;
+  transition: width var(--motion-base) var(--ease-soft-out),
+    height var(--motion-base) var(--ease-soft-out);
 }
 
 .brandText {
@@ -51,7 +68,8 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  transition: font-size 0.3s ease;
+  transition: font-size var(--motion-base) var(--ease-soft-out),
+    transform var(--motion-base) var(--ease-soft-out);
 }
 
 .primaryNav {
@@ -59,7 +77,15 @@
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  padding-bottom: 0.15rem;
+  min-width: 0;
+  max-width: 38rem;
+  opacity: 1;
+  overflow: hidden;
+  transform: translateY(0) scale(1);
+  transform-origin: center top;
+  transition: opacity var(--motion-base) var(--ease-gentle),
+    transform var(--motion-base) var(--ease-soft-out),
+    max-width var(--motion-base) var(--ease-soft-out);
 }
 
 .navItem {
@@ -75,7 +101,9 @@
   padding: 0.7rem 0.9rem;
   border-radius: 999px;
   border: 1px solid transparent;
-  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  transition: color var(--motion-fast) var(--ease-gentle),
+    border-color var(--motion-fast) var(--ease-gentle),
+    background-color var(--motion-fast) var(--ease-gentle);
 }
 
 .navItem:hover {
@@ -100,23 +128,32 @@
   border-radius: 999px;
   background: #111827;
   transform: translateX(calc((100% + 0.7rem) * var(--active-index, 0)));
-  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform var(--motion-base) var(--ease-soft-out);
 }
 
 .navIcon {
   font-size: 1rem;
   color: #e11d48;
-  transition: transform 0.25s ease;
+  transition: transform var(--motion-fast) var(--ease-soft-out);
 }
 
 .navItem:hover .navIcon {
   transform: translateY(-1px);
 }
 
+.compact .primaryNav {
+  max-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px) scale(0.985);
+}
+
 .topActions {
   display: flex;
   align-items: center;
   gap: 0.55rem;
+  flex: 0 0 auto;
+  transition: gap var(--motion-base) var(--ease-gentle);
 }
 
 .authButton,
@@ -126,7 +163,9 @@
   border-radius: 999px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.2s ease, filter 0.2s ease, background-color 0.2s ease;
+  transition: transform var(--motion-fast) var(--ease-soft-out),
+    filter var(--motion-fast) var(--ease-gentle),
+    background-color var(--motion-fast) var(--ease-gentle);
 }
 
 .authButton {
@@ -170,19 +209,119 @@
   background: #f3f4f6;
 }
 
-.hostButton {
-  border: 0;
-  background: transparent;
-  color: #111827;
-  font-size: 1rem;
-  font-weight: 700;
-  padding: 0.45rem 0.6rem;
-  border-radius: 0.8rem;
-  cursor: pointer;
+.accountMenuWrap {
+  position: relative;
 }
 
-.hostButton:hover {
-  background: #ededed;
+.accountMenuTriggerActive {
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+}
+
+.accountMenu {
+  position: absolute;
+  top: calc(100% + 0.7rem);
+  right: 0;
+  width: min(20rem, calc(100vw - 1.6rem));
+  padding: 0.7rem;
+  border-radius: 1.2rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.16);
+  display: grid;
+  gap: 0.4rem;
+  z-index: 7;
+  animation: languageMenuEnter var(--motion-fast) var(--ease-soft-out);
+}
+
+.accountMenuItem {
+  width: 100%;
+  border: 0;
+  border-radius: 1rem;
+  padding: 0.82rem 0.88rem;
+  background: #ffffff;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-gentle),
+    transform var(--motion-fast) var(--ease-soft-out),
+    box-shadow var(--motion-fast) var(--ease-soft-out);
+}
+
+.accountMenuItem:hover {
+  background: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: inset 0 0 0 1px #e2e8f0;
+}
+
+.accountMenuItemPrimary {
+  background: linear-gradient(180deg, #fff8fb 0%, #ffffff 100%);
+}
+
+.accountMenuItemSecondary {
+  background: #ffffff;
+}
+
+.accountMenuItemDanger {
+  background: #ffffff;
+}
+
+.accountMenuItemDanger:hover {
+  background: #fff1f2;
+  box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.14);
+}
+
+.accountMenuProfile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.2rem 0.25rem 0.35rem;
+}
+
+.accountMenuIcon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: #fff1f2;
+  color: #e11d48;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font-size: 1rem;
+}
+
+.accountMenuIconNeutral {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.accountMenuCopy {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.accountMenuTitle {
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.accountMenuSubtitle {
+  color: #64748b;
+  font-size: 0.79rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.accountMenuDivider {
+  height: 1px;
+  margin: 0.1rem 0.15rem;
+  background: #e5e7eb;
 }
 
 .iconCircle {
@@ -190,6 +329,7 @@
   height: 2.55rem;
   border-radius: 999px;
   border: 0;
+  position: relative;
   background: #ececec;
   color: #1f2937;
   display: inline-flex;
@@ -197,11 +337,115 @@
   justify-content: center;
   font-size: 1.08rem;
   cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-gentle),
+    transform var(--motion-fast) var(--ease-soft-out);
 }
 
 .iconCircle:hover {
   background: #e1e1e1;
   transform: translateY(-1px);
+}
+
+.languageWrap {
+  position: relative;
+}
+
+.languageButtonActive {
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+}
+
+.languageMenu {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  right: 0;
+  width: min(13.5rem, calc(100vw - 1.6rem));
+  padding: 0.4rem;
+  border-radius: 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.12);
+  display: grid;
+  gap: 0.1rem;
+  z-index: 6;
+  animation: languageMenuEnter var(--motion-fast) var(--ease-soft-out);
+}
+
+.languageOption {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  border-radius: 0.8rem;
+  padding: 0.72rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  color: #111827;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-gentle),
+    color var(--motion-fast) var(--ease-gentle);
+}
+
+.languageOption:hover {
+  background: #f8fafc;
+}
+
+.languageOptionActive {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.languageOptionMain {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.languageFlag {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.98rem;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.languageName {
+  color: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.languageCheck {
+  color: #111827;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-gentle);
+}
+
+.languageCheckVisible {
+  opacity: 1;
+}
+
+.mobileSearchToggle {
+  display: none;
+}
+
+.mobileSearchToggleActive {
+  background: #f43f5e;
+  color: #ffffff;
 }
 
 .compactSearch {
@@ -221,9 +465,11 @@
   max-height: 2.9rem;
   overflow: hidden;
   pointer-events: none;
-  transform: translateY(-6px) scale(0.985);
-  transition: opacity 0.35s ease, transform 0.35s ease, width 0.35s ease,
-    max-width 0.35s ease;
+  transform: translateY(-4px) scale(0.992);
+  transition: opacity var(--motion-base) var(--ease-gentle),
+    transform var(--motion-base) var(--ease-soft-out),
+    width var(--motion-base) var(--ease-soft-out),
+    max-width var(--motion-base) var(--ease-soft-out);
 }
 
 .compactSearchVisible {
@@ -255,9 +501,32 @@
   font-size: 1rem;
 }
 
+.searchLayer {
+  position: absolute;
+  left: 50%;
+  top: calc(100% - 0.4rem);
+  width: min(1100px, calc(100% - 2rem));
+  display: flex;
+  justify-content: center;
+  transform-origin: center top;
+  transition: opacity var(--motion-base) var(--ease-gentle),
+    transform var(--motion-slow) var(--ease-soft-out);
+}
+
+.searchLayerVisible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+}
+
+.searchLayerHidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -0.55rem) scale(0.992);
+}
+
 .searchBar {
-  width: min(980px, calc(100% - 2rem));
-  margin: 1rem auto 0;
+  width: min(980px, 100%);
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 999px;
@@ -267,56 +536,6 @@
   align-items: center;
   gap: 0;
   padding: 0.3rem;
-  max-height: 6rem;
-  opacity: 1;
-  overflow: hidden;
-  transform: translateY(0) scale(1);
-  transition: opacity 0.35s ease, transform 0.35s ease, max-height 0.35s ease,
-    margin-top 0.35s ease, padding 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
-}
-
-.searchBarHidden {
-  opacity: 0;
-  max-height: 0;
-  margin-top: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  border-color: transparent;
-  box-shadow: none;
-  pointer-events: none;
-  transform: translateY(-8px) scale(0.985);
-}
-
-.compact .primaryNav {
-  display: none;
-}
-
-.compact .topBar {
-  gap: 0.55rem;
-}
-
-.compact .brandIcon {
-  width: 1.72rem;
-  height: 1.72rem;
-}
-
-.compact .brandText {
-  font-size: 1.14rem;
-}
-
-.compact .topActions {
-  gap: 0.4rem;
-}
-
-.compact .hostButton {
-  font-size: 0.92rem;
-  padding: 0.38rem 0.45rem;
-}
-
-.compact .iconCircle {
-  width: 2.22rem;
-  height: 2.22rem;
-  font-size: 0.96rem;
 }
 
 .searchField {
@@ -363,7 +582,8 @@
   justify-content: center;
   font-size: 1.25rem;
   cursor: pointer;
-  transition: filter 0.2s ease, transform 0.2s ease;
+  transition: filter var(--motion-fast) var(--ease-gentle),
+    transform var(--motion-fast) var(--ease-soft-out);
 }
 
 .searchButton:hover {
@@ -371,34 +591,61 @@
   transform: translateY(-1px);
 }
 
-@media (max-width: 1040px) {
-  .hostButton {
-    display: none;
+.compact .topBar {
+  gap: 0.55rem;
+}
+
+.compact .brandIcon {
+  width: 1.72rem;
+  height: 1.72rem;
+}
+
+.compact .brandText {
+  font-size: 1.14rem;
+  transform: translateY(-1px);
+}
+
+.compact .topActions {
+  gap: 0.4rem;
+}
+
+.compact .iconCircle {
+  width: 2.22rem;
+  height: 2.22rem;
+  font-size: 0.96rem;
+}
+
+@keyframes languageMenuEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-0.35rem) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
 @media (max-width: 860px) {
-  .compact .primaryNav {
-    display: flex;
-  }
-
-  .compactSearch,
-  .compactSearchVisible {
+  .compactSentinel {
     display: none;
   }
 
-  .searchBarHidden {
-    opacity: 1;
-    max-height: 20rem;
-    margin-top: 1rem;
-    padding: 0.45rem;
-    border-color: #e5e7eb;
-    box-shadow: 0 8px 24px rgba(17, 24, 39, 0.08);
-    pointer-events: auto;
-    transform: none;
+  .headerShell {
+    height: auto;
+  }
+
+  .header {
+    height: auto;
+    padding: 0.75rem 0.8rem 0.95rem;
+    background: #f6f6f6;
+    backdrop-filter: none;
   }
 
   .topBar {
+    width: 100%;
+    height: auto;
     flex-wrap: wrap;
     justify-content: center;
     row-gap: 0.7rem;
@@ -407,22 +654,86 @@
   .primaryNav {
     order: 3;
     width: 100%;
+    max-width: none;
     justify-content: center;
     flex-wrap: wrap;
+    opacity: 1;
+    transform: none;
+  }
+
+  .compact .primaryNav {
+    max-width: none;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
   }
 
   .topActions {
-    margin-left: auto;
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .accountMenu {
+    right: 0;
+  }
+
+  .languageMenu {
+    right: 0;
   }
 
   .authSummary {
     order: -1;
   }
 
+  .mobileSearchToggle {
+    display: inline-flex;
+  }
+
+  .compactSearch,
+  .compactSearchVisible {
+    display: none;
+  }
+
+  .searchLayer {
+    position: static;
+    left: auto;
+    top: auto;
+    width: 100%;
+    padding-top: 0.75rem;
+    overflow: hidden;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+    transition: max-height var(--motion-base) var(--ease-soft-out),
+      opacity var(--motion-base) var(--ease-gentle),
+      padding-top var(--motion-base) var(--ease-soft-out),
+      transform var(--motion-base) var(--ease-soft-out);
+  }
+
+  .searchLayerVisible,
+  .searchLayerHidden {
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .searchLayerMobileHidden {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    pointer-events: none;
+  }
+
+  .searchLayerMobileVisible {
+    max-height: 22rem;
+    opacity: 1;
+  }
+
   .searchBar {
     border-radius: 1rem;
     grid-template-columns: 1fr;
-    width: min(680px, calc(100% - 1rem));
+    width: min(680px, 100%);
     padding: 0.45rem;
     gap: 0.2rem;
   }
@@ -447,7 +758,7 @@
 
 @media (max-width: 520px) {
   .header {
-    padding: 0.7rem 0.55rem 1rem;
+    padding: 0.7rem 0.55rem 0.9rem;
   }
 
   .brandIcon {
@@ -474,18 +785,33 @@
   .fieldInput {
     font-size: 0.97rem;
   }
+
+  .accountMenu {
+    width: min(100vw - 1.1rem, 20rem);
+  }
+
+  .languageMenu {
+    width: min(100vw - 1.1rem, 13.5rem);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   .header,
   .topBar,
   .brandIcon,
   .brandText,
+  .primaryNav,
   .navItem,
   .navIndicator,
+  .topActions,
+  .accountMenu,
+  .accountMenuItem,
   .iconCircle,
+  .languageMenu,
+  .languageOption,
+  .languageCheck,
   .compactSearch,
+  .searchLayer,
   .searchBar,
   .searchButton {
     transition: none;

@@ -7,7 +7,8 @@
 .reveal {
   opacity: 0;
   transform: translateY(10px);
-  transition: opacity 1.05s ease, transform 1.05s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: opacity var(--motion-reveal) var(--ease-gentle),
+    transform var(--motion-reveal) var(--ease-soft-out);
   will-change: opacity, transform;
 }
 
@@ -17,23 +18,23 @@
 }
 
 .delay1 {
-  transition-delay: 90ms;
+  transition-delay: 80ms;
 }
 
 .delay2 {
-  transition-delay: 190ms;
+  transition-delay: 160ms;
 }
 
 .delay3 {
-  transition-delay: 290ms;
+  transition-delay: 240ms;
 }
 
 .delay4 {
-  transition-delay: 390ms;
+  transition-delay: 320ms;
 }
 
 .delay5 {
-  transition-delay: 490ms;
+  transition-delay: 400ms;
 }
 
 .wave {
@@ -116,12 +117,13 @@
   border-radius: 45% 55% 60% 40% / 55% 45% 55% 45%;
   background: #dfd3c5;
   box-shadow: 0 22px 36px rgba(0, 0, 0, 0.16);
-  transition: transform 0.55s ease, box-shadow 0.55s ease;
+  transition: transform var(--motion-slow) var(--ease-soft-out),
+    box-shadow var(--motion-slow) var(--ease-soft-out);
 }
 
 .blobLarge:hover,
 .blobSmall:hover {
-  transform: scale(1.015);
+  transform: scale(1.01);
   box-shadow: 0 24px 40px rgba(0, 0, 0, 0.19);
 }
 
@@ -161,7 +163,8 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   cursor: pointer;
-  transition: transform 0.38s ease, filter 0.38s ease;
+  transition: transform var(--motion-base) var(--ease-soft-out),
+    filter var(--motion-base) var(--ease-gentle);
 }
 
 .ctaButton:hover {
@@ -184,7 +187,7 @@
   letter-spacing: 0.08em;
   pointer-events: none;
   user-select: none;
-  animation: watermarkFloat 12s ease-in-out infinite alternate;
+  animation: watermarkFloat 16s ease-in-out infinite alternate;
 }
 
 .visualBottom {

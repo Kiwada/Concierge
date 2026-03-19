@@ -45,6 +45,13 @@
   --margin-l: 2rem;
   --margin-xl: 3rem;
   --margin-xxl: 6rem;
+
+  --motion-fast: 220ms;
+  --motion-base: 320ms;
+  --motion-slow: 440ms;
+  --motion-reveal: 860ms;
+  --ease-soft-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-gentle: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 body {

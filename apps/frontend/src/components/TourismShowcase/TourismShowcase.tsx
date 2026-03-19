@@ -2,47 +2,42 @@ import { useEffect, useRef, useState } from "react";
 import styles from "./TourismShowcase.module.css";
 
 const TourismShowcase = () => {
-  const topRef = useRef<HTMLElement | null>(null);
   const bottomRef = useRef<HTMLElement | null>(null);
   const [topVisible, setTopVisible] = useState(false);
   const [bottomVisible, setBottomVisible] = useState(false);
-  const [topInView, setTopInView] = useState(false);
-  const [hasScrolled, setHasScrolled] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => {
-      if (window.scrollY > 24) setHasScrolled(true);
+    let frameId = 0;
+    let timeoutId = 0;
+
+    frameId = window.requestAnimationFrame(() => {
+      timeoutId = window.setTimeout(() => {
+        setTopVisible(true);
+      }, 120);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(timeoutId);
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
-    if (hasScrolled && topInView) {
-      setTopVisible(true);
-    }
-  }, [hasScrolled, topInView]);
-
-  useEffect(() => {
-    const topEl = topRef.current;
     const bottomEl = bottomRef.current;
-    if (!topEl && !bottomEl) return;
+    if (!bottomEl) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.target === topEl) {
-            setTopInView(true);
-          }
           if (entry.isIntersecting && entry.target === bottomEl) {
             setBottomVisible(true);
+            observer.unobserve(bottomEl);
           }
         });
       },
       { threshold: 0.18, rootMargin: "0px 0px -8% 0px" },
     );
 
-    if (topEl) observer.observe(topEl);
     if (bottomEl) observer.observe(bottomEl);
 
     return () => observer.disconnect();
@@ -52,7 +47,7 @@ const TourismShowcase = () => {
     <section className={styles.showcase} aria-label="Destaques de turismo">
       <div className={styles.wave} aria-hidden="true" />
 
-      <article ref={topRef} className={`${styles.block} ${styles.blockTop}`}>
+      <article className={`${styles.block} ${styles.blockTop}`}>
         <div
           className={`${styles.visualTop} ${styles.reveal} ${styles.delay1} ${
             topVisible ? styles.isVisible : ""
@@ -63,6 +58,9 @@ const TourismShowcase = () => {
               src="/assets/turismo/peninsula-marau.jpg"
               alt="Paisagem da Peninsula de Marau"
               className={styles.blobImage}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
             />
           </div>
         </div>
@@ -158,6 +156,8 @@ const TourismShowcase = () => {
               src="/assets/turismo/melancieiras.jpg"
               alt="Paisagem em Melancieiras no Delta do Parnaiba"
               className={styles.blobImage}
+              loading="lazy"
+              decoding="async"
             />
           </div>
           <img

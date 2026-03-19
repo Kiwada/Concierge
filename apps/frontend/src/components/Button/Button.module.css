@@ -1,21 +1,61 @@
 .botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.75rem;
   padding: var(--padding-s);
   font-family: var(--fonte-texto);
   font-size: var(--font-size-s);
-  border: none;
-  border-radius: 8px;
+  line-height: 1;
+  border: 1px solid transparent;
+  border-radius: 0.9rem;
   cursor: pointer;
+  transition: transform var(--motion-fast) var(--ease-soft-out),
+    background-color var(--motion-fast) var(--ease-gentle),
+    color var(--motion-fast) var(--ease-gentle),
+    border-color var(--motion-fast) var(--ease-gentle),
+    box-shadow var(--motion-fast) var(--ease-soft-out),
+    opacity var(--motion-fast) var(--ease-gentle);
+}
+
+.botao:hover:not(:disabled) {
+  transform: translateY(-0.5px);
+}
+
+.botao:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(244, 88, 102, 0.18);
+}
+
+.botao:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none;
 }
 
 .default {
   color: var(--branco);
   background-color: var(--cinza-escuro);
+  box-shadow: 0 12px 24px rgba(37, 37, 48, 0.16);
+}
+
+.default:hover:not(:disabled) {
+  background-color: #1e1e27;
 }
 
 .icon {
-  background: none;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  background: #ffffff;
   font-size: var(--font-size-l);
-  border: none;
   padding: 0.5rem;
   color: #333;
+  border-color: rgba(37, 37, 48, 0.12);
+  box-shadow: 0 8px 16px rgba(37, 37, 48, 0.08);
+}
+
+.icon:hover:not(:disabled) {
+  background: #f7f7f7;
+  color: #111827;
 }

@@ -12,7 +12,7 @@ interface ChatMessage {
 }
 
 const initialAssistantText =
-  "Ola, eu sou Lia, assistente digital. Entre na sua conta para manter o contexto do atendimento e receber respostas personalizadas.";
+  "Olá, eu sou Lia, assistente digital. Entre na sua conta para manter o contexto do atendimento e receber respostas personalizadas.";
 
 const SESSION_STORAGE_KEY = "concierge_chat_session_id";
 const createSessionId = () => {
@@ -40,12 +40,13 @@ const ChatAssistant = () => {
     { id: "a-1", author: "assistant", text: initialAssistantText },
   ]);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const isOpenRef = useRef(isOpen);
 
   const canSend = useMemo(() => input.trim().length > 0, [input]);
   const connectionLabel = useMemo(() => {
-    if (!isConfigured) return "auth indisponivel";
-    if (isLoading) return "verificando";
-    if (!isAuthenticated || !accessToken) return "login necessario";
+    if (!isConfigured) return "autenticação indisponível";
+    if (isLoading) return "verificando conexão";
+    if (!isAuthenticated || !accessToken) return "login necessário";
     return "autenticado";
   }, [accessToken, isAuthenticated, isConfigured, isLoading]);
 
@@ -57,6 +58,39 @@ const ChatAssistant = () => {
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, isSending, isOpen]);
+
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleOpenChat = () => {
+      setIsOpen(true);
+      setUnreadCount(0);
+    };
+
+    window.addEventListener("concierge:open-chat", handleOpenChat);
+
+    return () => {
+      window.removeEventListener("concierge:open-chat", handleOpenChat);
+    };
+  }, []);
+
+  const appendAssistantMessage = (text: string) => {
+    const assistantReply: ChatMessage = {
+      id: `a-${Date.now() + 1}`,
+      author: "assistant",
+      text,
+    };
+
+    setMessages((prev) => [...prev, assistantReply]);
+
+    if (!isOpenRef.current) {
+      setUnreadCount((prev) => prev + 1);
+    }
+  };
 
   const toggleOpen = () => {
     setIsOpen((prev) => !prev);
@@ -70,26 +104,16 @@ const ChatAssistant = () => {
     if (!text || isSending) return;
 
     if (!isConfigured) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `a-${Date.now() + 1}`,
-          author: "assistant",
-          text: "O login ainda nao foi configurado neste ambiente. Defina as variaveis do Supabase para usar o atendimento autenticado.",
-        },
-      ]);
+      appendAssistantMessage(
+        "O login ainda não foi configurado neste ambiente. Defina as variáveis do Supabase para usar o atendimento autenticado.",
+      );
       return;
     }
 
     if (!isAuthenticated || !accessToken) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `a-${Date.now() + 1}`,
-          author: "assistant",
-          text: "Entre na sua conta para conversar com a Lia e manter o contexto do atendimento.",
-        },
-      ]);
+      appendAssistantMessage(
+        "Entre na sua conta para conversar com a Lia e manter o contexto do atendimento.",
+      );
       return;
     }
 
@@ -113,23 +137,13 @@ const ChatAssistant = () => {
         setSessionId(response.sessionId);
       }
 
-      const assistantReply: ChatMessage = {
-        id: `a-${Date.now() + 1}`,
-        author: "assistant",
-        text: response.reply,
-      };
-
-      setMessages((prev) => [...prev, assistantReply]);
+      appendAssistantMessage(response.reply);
     } catch (error) {
-      const assistantReply: ChatMessage = {
-        id: `a-${Date.now() + 1}`,
-        author: "assistant",
-        text:
-          error instanceof Error
-            ? error.message
-            : "Nao consegui falar com o agente agora. Tente novamente em instantes.",
-      };
-      setMessages((prev) => [...prev, assistantReply]);
+      appendAssistantMessage(
+        error instanceof Error
+          ? error.message
+          : "Não consegui falar com o agente agora. Tente novamente em instantes.",
+      );
       console.error("chat-agent-error", error);
     } finally {
       setIsSending(false);
@@ -157,7 +171,7 @@ const ChatAssistant = () => {
             <span className={styles.subtitle}>{connectionLabel}</span>
           </header>
 
-          <div className={styles.messages}>
+          <div className={styles.messages} role="log" aria-live="polite" aria-busy={isSending}>
             {messages.map((message) => (
               <article
                 key={message.id}
@@ -170,7 +184,7 @@ const ChatAssistant = () => {
             ))}
             {isSending && (
               <article className={`${styles.message} ${styles.assistant} ${styles.typing}`}>
-                Lia esta digitando...
+                Lia está digitando...
               </article>
             )}
             <div ref={endRef} />
@@ -182,18 +196,25 @@ const ChatAssistant = () => {
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter") sendMessage();
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void sendMessage();
+                }
               }}
               placeholder={
-                isAuthenticated
-                  ? "Digite sua mensagem"
-                  : "Entre para conversar com contexto"
+                !isConfigured
+                  ? "Configure o login para usar o atendimento"
+                  : isAuthenticated
+                    ? "Digite sua mensagem"
+                    : "Entre para conversar com contexto"
               }
               className={styles.input}
+              disabled={isSending}
+              aria-label="Digite sua mensagem"
             />
             <button
               type="button"
-              onClick={sendMessage}
+              onClick={() => void sendMessage()}
               className={styles.sendButton}
               disabled={!canSend || isSending}
               aria-label="Enviar mensagem"

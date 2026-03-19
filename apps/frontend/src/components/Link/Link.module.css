@@ -1,8 +1,10 @@
 .link{
     text-decoration: none;
     color: var(--preto);
+    transition: color var(--motion-fast) var(--ease-gentle),
+      transform var(--motion-fast) var(--ease-soft-out);
 }
 
 .link:hover{
-    transform: scale(1.1);
+    color: inherit;
 }

@@ -1,38 +1,35 @@
 .rodape {
   display: flex;
-  align-items: center;
   justify-content: center;
-  min-height: 252px;
-  padding: 1.4rem 1rem;
-  background-color: var(--preto);
+  padding: clamp(2rem, 4vw, 3rem) 1rem;
+  background: #f6f3ee;
+  border-top: 1px solid #dfd8cf;
 }
 
 .rodape_informacoes {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-around;
-  gap: clamp(1rem, 2.2vw, 2.5rem);
+  display: grid;
+  grid-template-columns: minmax(15rem, 1.2fr) repeat(3, minmax(0, 0.9fr));
+  align-items: start;
+  gap: clamp(1.25rem, 2.8vw, 3rem);
   width: min(1180px, 100%);
-  color: var(--cinza-claro);
-  text-align: center;
-  padding-top: 0.45rem;
+  color: #111827;
+  text-align: left;
 }
 
 .logo {
-  width: min(18rem, 100%);
-  margin: 0 auto;
+  width: min(20rem, 100%);
+  margin: 0;
   display: flex;
   align-items: flex-start;
-  justify-content: center;
-  align-self: flex-start;
-  margin-top: 0.2rem;
+  justify-content: flex-start;
 }
 
 .logoImage {
-  width: clamp(8.6rem, 12vw, 11rem);
+  width: clamp(12.5rem, 16vw, 16.5rem);
   height: auto;
   display: block;
   margin: 0;
+  object-fit: contain;
 }
 
 .logoText {
@@ -48,62 +45,87 @@
 .redes {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--gap-xs);
-  color: var(--cinza-claro);
+  align-items: flex-start;
+  gap: 0.72rem;
+  color: #374151;
 }
 
-.redes {
-  align-self: flex-start;
-  margin-top: 0.2rem;
+.funcionamento span,
+.institucional span,
+.redes span {
+  line-height: 1.55;
 }
 
 .titulo {
   margin: 0;
-  font-family: var(--fonte-titulo);
-  font-weight: 400;
+  font-family: var(--fonte-texto);
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #111827;
 }
 
 .ancora {
-  color: var(--cinza-claro);
+  color: #374151;
   text-decoration: none;
+  transition: color var(--motion-fast) var(--ease-gentle),
+    transform var(--motion-fast) var(--ease-soft-out);
 }
 
 .ancora:hover {
-  color: var(--branco);
-  transform: scale(1.1);
+  color: #111827;
+  transform: translateX(1px);
 }
 
 .icones {
   display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.socialLink {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  background: rgba(255, 255, 255, 0.8);
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  gap: var(--gap-xs);
-  color: var(--azul);
-  font-size: var(--font-size-m);
+  color: #111827;
+  transition: transform var(--motion-fast) var(--ease-soft-out),
+    background-color var(--motion-fast) var(--ease-gentle),
+    border-color var(--motion-fast) var(--ease-gentle),
+    box-shadow var(--motion-fast) var(--ease-soft-out);
+}
+
+.socialLink:hover {
+  transform: translateY(-0.5px);
+  background: #ffffff;
+  border-color: rgba(17, 24, 39, 0.28);
+  box-shadow: 0 10px 18px rgba(17, 24, 39, 0.06);
 }
 
 .icone {
-  color: var(--azul);
+  color: currentColor;
+  font-size: 1.18rem;
 }
 
 .desenvolvimento {
-  padding: var(--padding-m) var(--padding-s);
-  background-color: var(--cinza-claro);
-  color: var(--preto);
+  padding: 0.95rem 1rem;
+  background: #ebe5dd;
+  color: #111827;
   text-align: center;
   font-family: var(--fonte-texto);
   font-weight: 400;
-  font-size: var(--font-size-m);
+  font-size: 0.95rem;
+  border-top: 1px solid #d7cfc6;
 }
 
 @media (max-width: 980px) {
-  .rodape {
-    min-height: 0;
-  }
-
   .rodape_informacoes {
-    flex-wrap: wrap;
-    justify-content: center;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -113,25 +135,25 @@
   }
 
   .rodape_informacoes {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     align-items: center;
     gap: 1.2rem;
-    padding-top: 0;
+    text-align: center;
   }
 
+  .funcionamento,
+  .institucional,
   .redes {
-    align-self: center;
-    margin-top: 0;
+    align-items: center;
   }
 
   .logo {
     width: 100%;
-    align-self: center;
-    margin-top: 0;
+    justify-content: center;
   }
 
   .logoImage {
-    width: 10.8rem;
+    width: min(16rem, 100%);
   }
 
   .desenvolvimento {

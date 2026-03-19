@@ -5,9 +5,11 @@ const FooterLogo = () => {
   return (
     <div className={styles.logo}>
       <Logo
-        src="/Icon.png"
-        alt="Icon Concierge Hub"
+        src="/logo-concierge-hub.png"
+        alt="Logo ConciergeHub"
         className={styles.logoImage}
+        loading="lazy"
+        decoding="async"
       />
     </div>
   );
