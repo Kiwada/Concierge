@@ -1,11 +1,7 @@
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { createClient } from "@supabase/supabase-js";
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")?.trim();
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")?.trim();
-const N8N_CHAT_WEBHOOK_URL = Deno.env.get("N8N_CHAT_WEBHOOK_URL")?.trim();
-const N8N_CHAT_CHANNEL = Deno.env.get("N8N_CHAT_CHANNEL")?.trim() || "web";
-const N8N_CHAT_SOURCE = Deno.env.get("N8N_CHAT_SOURCE")?.trim() || "concierge-web";
-const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN")?.trim() || "*";
+import { env } from "../config/env.js";
+import { readJsonBody, sendJson } from "../lib/http.js";
 
 type ChatRequest = {
   message?: string;
@@ -40,22 +36,6 @@ const CANDIDATE_SESSION_KEYS = [
   "threadId",
   "chatId",
 ] as const;
-
-const buildCorsHeaders = () => ({
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Cache-Control": "no-store",
-});
-
-const jsonResponse = (body: Record<string, unknown>, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      ...buildCorsHeaders(),
-      "Content-Type": "application/json",
-    },
-  });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -108,11 +88,7 @@ const extractReply = (value: unknown): string | null => {
     const directReply = pickString(value, CANDIDATE_REPLY_KEYS);
     if (directReply) return directReply;
 
-    return (
-      extractReply(value.data) ??
-      extractReply(value.json) ??
-      extractReply(value.body)
-    );
+    return extractReply(value.data) ?? extractReply(value.json) ?? extractReply(value.body);
   }
 
   return null;
@@ -131,58 +107,70 @@ const extractSessionId = (value: unknown): string | null => {
   );
 };
 
-Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") {
-    return new Response("ok", { headers: buildCorsHeaders() });
-  }
-
-  if (request.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed." }, 405);
-  }
-
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !N8N_CHAT_WEBHOOK_URL) {
-    return jsonResponse(
+export const handleChatRoute = async (
+  request: IncomingMessage,
+  response: ServerResponse,
+) => {
+  if (!env.supabaseUrl || !env.supabaseAnonKey || !env.n8nChatWebhookUrl) {
+    sendJson(
+      response,
+      500,
       {
         error:
           "Missing server configuration. Configure SUPABASE_URL, SUPABASE_ANON_KEY and N8N_CHAT_WEBHOOK_URL.",
       },
-      500,
+      env.allowedOrigin,
     );
+    return;
   }
 
-  const authHeader = request.headers.get("Authorization") ?? "";
+  const authHeader = request.headers.authorization ?? "";
   const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
 
   if (!accessToken) {
-    return jsonResponse({ error: "Authorization bearer token is required." }, 401);
+    sendJson(
+      response,
+      401,
+      { error: "Authorization bearer token is required." },
+      env.allowedOrigin,
+    );
+    return;
   }
 
   let body: ChatRequest;
 
   try {
-    body = (await request.json()) as ChatRequest;
+    body = await readJsonBody<ChatRequest>(request);
   } catch {
-    return jsonResponse({ error: "Invalid JSON body." }, 400);
+    sendJson(response, 400, { error: "Invalid JSON body." }, env.allowedOrigin);
+    return;
   }
 
   const message = body.message?.trim();
   const sessionId = body.sessionId?.trim() || crypto.randomUUID();
 
   if (!message) {
-    return jsonResponse({ error: "message is required." }, 400);
+    sendJson(response, 400, { error: "message is required." }, env.allowedOrigin);
+    return;
   }
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey);
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser(accessToken);
 
   if (authError || !user) {
-    return jsonResponse({ error: "Invalid or expired auth token." }, 401);
+    sendJson(
+      response,
+      401,
+      { error: "Invalid or expired auth token." },
+      env.allowedOrigin,
+    );
+    return;
   }
 
-  const authenticatedSupabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  const authenticatedSupabase = createClient(env.supabaseUrl, env.supabaseAnonKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -209,7 +197,7 @@ Deno.serve(async (request) => {
   const metadataFullName = pickMetadataString(user.user_metadata, "full_name");
   const fullName = profile?.full_name?.trim() || metadataFullName || null;
 
-  const upstreamResponse = await fetch(N8N_CHAT_WEBHOOK_URL, {
+  const upstreamResponse = await fetch(env.n8nChatWebhookUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -217,8 +205,8 @@ Deno.serve(async (request) => {
     body: JSON.stringify({
       message,
       sessionId,
-      channel: N8N_CHAT_CHANNEL,
-      source: N8N_CHAT_SOURCE,
+      channel: env.n8nChatChannel,
+      source: env.n8nChatSource,
       user: {
         id: user.id,
         email: user.email ?? null,
@@ -239,12 +227,15 @@ Deno.serve(async (request) => {
   });
 
   if (!upstreamResponse.ok) {
-    return jsonResponse(
+    sendJson(
+      response,
+      502,
       {
         error: `Upstream n8n webhook failed with status ${upstreamResponse.status}.`,
       },
-      502,
+      env.allowedOrigin,
     );
+    return;
   }
 
   const contentType = upstreamResponse.headers.get("content-type") ?? "";
@@ -252,20 +243,31 @@ Deno.serve(async (request) => {
   if (!contentType.includes("application/json")) {
     const rawText = (await upstreamResponse.text()).trim();
 
-    return jsonResponse({
-      reply: rawText || "Mensagem recebida. Em breve retorno com mais detalhes.",
-      sessionId,
-    });
+    sendJson(
+      response,
+      200,
+      {
+        reply: rawText || "Mensagem recebida. Em breve retorno com mais detalhes.",
+        sessionId,
+      },
+      env.allowedOrigin,
+    );
+    return;
   }
 
   const upstreamBody = (await upstreamResponse.json()) as unknown;
   const reply =
     extractReply(upstreamBody) ||
-    "Recebi sua mensagem, mas o n8n nao retornou um texto reconhecivel.";
+    "Recebi sua mensagem, mas o backend nao recebeu um texto reconhecivel do n8n.";
   const nextSessionId = extractSessionId(upstreamBody) || sessionId;
 
-  return jsonResponse({
-    reply,
-    sessionId: nextSessionId,
-  });
-});
+  sendJson(
+    response,
+    200,
+    {
+      reply,
+      sessionId: nextSessionId,
+    },
+    env.allowedOrigin,
+  );
+};

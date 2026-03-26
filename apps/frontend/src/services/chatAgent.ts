@@ -10,6 +10,8 @@ export type ChatReply = {
   sessionId: string;
 };
 
+const apiBaseUrl = import.meta.env.VITE_API_URL?.trim()?.replace(/\/+$/, "") ?? "";
+
 const CANDIDATE_REPLY_KEYS = [
   "reply",
   "response",
@@ -98,11 +100,79 @@ const extractErrorMessage = (value: unknown): string | null => {
   );
 };
 
+const invokeNodeBackend = async (payload: ChatPayload): Promise<ChatReply> => {
+  if (!supabase) {
+    throw new Error(
+      "Supabase nao configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.",
+    );
+  }
+
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  const accessToken = session?.access_token?.trim();
+
+  if (sessionError || !accessToken) {
+    throw new Error("Sessao autenticada nao encontrada. Entre novamente para usar o concierge.");
+  }
+
+  const response = await fetch(`${apiBaseUrl}/api/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (!response.ok) {
+    let errorMessage = "Nao consegui falar com o agente agora. Tente novamente em instantes.";
+
+    try {
+      if (contentType.includes("application/json")) {
+        const body = (await response.json()) as unknown;
+        errorMessage = extractErrorMessage(body) || errorMessage;
+      } else {
+        const rawText = (await response.text()).trim();
+        if (rawText) errorMessage = rawText;
+      }
+    } catch {
+      // Keep default message when the backend error response is unreadable.
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  if (!contentType.includes("application/json")) {
+    const rawText = (await response.text()).trim();
+    return {
+      reply: rawText || "Mensagem recebida. Em breve retorno com mais detalhes.",
+      sessionId: payload.sessionId,
+    };
+  }
+
+  const body = (await response.json()) as unknown;
+  const reply =
+    extractReply(body) ||
+    "Recebi sua mensagem, mas o backend autenticado nao retornou um texto reconhecivel.";
+  const sessionId = extractSessionId(body) || payload.sessionId;
+
+  return { reply, sessionId };
+};
+
 export const sendMessageToAgent = async (payload: ChatPayload): Promise<ChatReply> => {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error(
       "Supabase nao configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.",
     );
+  }
+
+  if (apiBaseUrl) {
+    return invokeNodeBackend(payload);
   }
 
   const { data, error, response } = await supabase.functions.invoke("chat", {

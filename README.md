@@ -5,7 +5,10 @@ assistidas por IA e frontend preparado para operacao em ambiente self-hosted.
 
 ## Visao geral
 
-Este repositorio centraliza o frontend do projeto Concierge e prioriza:
+Este repositorio centraliza o frontend do projeto Concierge e agora ja deixa
+o backend separado para evolucao gradual da arquitetura.
+
+Prioridades atuais:
 
 - evolucao continua com fluxo de branches
 - qualidade automatizada via CI
@@ -19,19 +22,29 @@ concierge/
 │   └── workflows/
 │       └── ci.yml
 ├── apps/
-│   └── frontend/
+│   ├── frontend/
+│   │   ├── Dockerfile
+│   │   ├── nginx/
+│   │   ├── public/
+│   │   ├── src/
+│   │   ├── .env.example
+│   │   └── package.json
+│   └── backend/
 │       ├── Dockerfile
-│       ├── nginx/
-│       ├── public/
 │       ├── src/
 │       ├── .env.example
-│       └── package.json
+│       ├── package.json
+│       └── tsconfig.json
+├── supabase/
+│   └── functions/
+│       └── chat/
 └── README.md
 ```
 
 ## Stack
 
 - React 19 + TypeScript + Vite
+- Node 22 + TypeScript para backend dedicado
 - CSS Modules
 - Docker multi-stage + Nginx (SPA)
 - GitHub Actions (CI)
@@ -52,6 +65,8 @@ concierge/
 
 ### Execucao
 
+Frontend:
+
 ```bash
 cd apps/frontend
 npm install
@@ -60,6 +75,16 @@ npm run dev
 
 Aplicacao local: `http://localhost:5173`
 
+Backend:
+
+```bash
+cd apps/backend
+npm install
+npm run dev
+```
+
+API local: `http://localhost:3000`
+
 ### Scripts principais
 
 - `npm run dev`: desenvolvimento
@@ -67,12 +92,27 @@ Aplicacao local: `http://localhost:5173`
 - `npm run preview`: preview local do build
 - `npm run lint`: validacao estatica
 
-## Variaveis de ambiente (frontend)
+## Variaveis de ambiente
 
 Arquivo base: `apps/frontend/.env.example`
 
-No estado atual do frontend, nao ha variaveis obrigatorias para execucao local.
-As variaveis `VITE_*` podem ser usadas futuramente para integracoes publicas.
+Frontend:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_API_URL` para apontar ao backend Node quando a migracao sair da Edge Function
+
+Backend:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `N8N_CHAT_WEBHOOK_URL`
+- `N8N_CHAT_CHANNEL`
+- `N8N_CHAT_SOURCE`
+- `ALLOWED_ORIGIN`
+- `PORT`
+
+Observacao: o backend Node e a Edge Function do Supabase podem coexistir durante a migracao.
 
 ## CI/CD
 
@@ -93,6 +133,10 @@ Etapas:
 3. `npm run build`
 
 Objetivo: bloquear integracoes com erro antes do deploy.
+
+No estado atual, a pipeline automatizada continua focada no frontend. O backend
+foi separado em `apps/backend` para permitir migracao gradual sem quebrar a
+operacao existente.
 
 ### CD (Coolify + Traefik)
 
@@ -117,6 +161,8 @@ Arquitetura operacional:
 2. Coolify orquestra build e ciclo de vida dos containers
 3. Traefik atua como reverse proxy e gerencia certificados HTTPS
 4. Frontend roda em container Nginx (SPA) publicado via dominio
+5. Backend Node pode ser publicado separadamente para concentrar autenticacao,
+   contexto do usuario e proxy seguro para o n8n
 
 Topologia simplificada:
 
@@ -134,6 +180,9 @@ Traefik (80/443 + TLS)
         |
         v
 Frontend Nginx Container
+        |
+        v
+Optional Backend Node API
 ```
 
 Ambientes sugeridos:
