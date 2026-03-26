@@ -61,9 +61,10 @@
   display: inline-block;
   font-size: clamp(1.2rem, 1.7vw, 1.62rem);
   font-weight: 700;
-  line-height: 1.08;
+  line-height: 1.14;
   letter-spacing: 0.01em;
-  padding-bottom: 0.08em;
+  padding-bottom: 0.12em;
+  font-family: "Poppins", var(--fonte-texto);
   color: #ff2f63;
   background: linear-gradient(120deg, #ff8ea8 0%, #ff4f79 45%, #ef1b4f 100%);
   -webkit-background-clip: text;
@@ -614,6 +615,8 @@
 .compact .brandText {
   font-size: 1.14rem;
   transform: translateY(-1px);
+  line-height: 1.14;
+  padding-bottom: 0.12em;
 }
 
 .compact .topActions {
@@ -775,6 +778,8 @@
 
   .brandText {
     font-size: 1.18rem;
+    line-height: 1.14;
+    padding-bottom: 0.12em;
   }
 
   .authButton,

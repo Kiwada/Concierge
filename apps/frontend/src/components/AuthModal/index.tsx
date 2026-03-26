@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { FiX } from "react-icons/fi";
+import { FiLock, FiMail, FiUser, FiX } from "react-icons/fi";
 import { useAuth } from "../../contexts/AuthContext";
 import styles from "./AuthModal.module.css";
 
@@ -64,7 +64,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = "sign-in" }: AuthModalProps)
   }, [isOpen, onClose]);
 
   const title = useMemo(
-    () => (mode === "sign-in" ? "Entrar na sua conta" : "Criar conta"),
+    () => (mode === "sign-in" ? "Login" : "Criar conta"),
     [mode],
   );
 
@@ -135,83 +135,62 @@ const AuthModal = ({ isOpen, onClose, initialMode = "sign-in" }: AuthModalProps)
         </button>
 
         <div className={styles.header}>
-          <span className={styles.eyebrow}>ConciergeHub Account</span>
           <h2 id="auth-modal-title" className={styles.title}>
             {title}
           </h2>
-          <p className={styles.description}>
-            Entre para salvar preferências, manter contexto do atendimento e personalizar as
-            recomendações turísticas.
-          </p>
-        </div>
-
-        <div className={styles.modeSwitch}>
-          <button
-            type="button"
-            onClick={() => handleModeChange("sign-in")}
-            className={`${styles.modeButton} ${
-              mode === "sign-in" ? styles.modeButtonActive : ""
-            }`}
-            aria-pressed={mode === "sign-in"}
-            disabled={isSubmitting}
-          >
-            Entrar
-          </button>
-          <button
-            type="button"
-            onClick={() => handleModeChange("sign-up")}
-            className={`${styles.modeButton} ${
-              mode === "sign-up" ? styles.modeButtonActive : ""
-            }`}
-            aria-pressed={mode === "sign-up"}
-            disabled={isSubmitting}
-          >
-            Criar conta
-          </button>
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit} aria-busy={isSubmitting}>
           {mode === "sign-up" && (
             <label className={styles.field}>
-              <span>Nome</span>
-              <input
-                type="text"
-                value={form.fullName}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, fullName: event.target.value }))
-                }
-                placeholder="Seu nome"
-                autoComplete="name"
-                required
-              />
+              <div className={styles.fieldControl}>
+                <span className={styles.fieldLabel}>Nome</span>
+                <input
+                  type="text"
+                  value={form.fullName}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, fullName: event.target.value }))
+                  }
+                  placeholder="Seu nome"
+                  autoComplete="name"
+                  required
+                />
+                <FiUser className={styles.fieldIcon} />
+              </div>
             </label>
           )}
 
           <label className={styles.field}>
-            <span>E-mail</span>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
-              placeholder="voce@email.com"
-              autoComplete="email"
-              required
-            />
+            <div className={styles.fieldControl}>
+              <span className={styles.fieldLabel}>Email</span>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+                placeholder="voce@email.com"
+                autoComplete="email"
+                required
+              />
+              <FiMail className={styles.fieldIcon} />
+            </div>
           </label>
 
           <label className={styles.field}>
-            <span>Senha</span>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, password: event.target.value }))
-              }
-              placeholder="Mínimo de 6 caracteres"
-              autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
-              minLength={6}
-              required
-            />
+            <div className={styles.fieldControl}>
+              <span className={styles.fieldLabel}>Senha</span>
+              <input
+                type="password"
+                value={form.password}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, password: event.target.value }))
+                }
+                placeholder="Mínimo de 6 caracteres"
+                autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+                minLength={6}
+                required
+              />
+              <FiLock className={styles.fieldIcon} />
+            </div>
           </label>
 
           {feedback && (
@@ -233,6 +212,20 @@ const AuthModal = ({ isOpen, onClose, initialMode = "sign-in" }: AuthModalProps)
                 ? "Entrar"
                 : "Criar conta"}
           </button>
+
+          <div className={styles.switchRow}>
+            <span className={styles.switchText}>
+              {mode === "sign-in" ? "Não tem uma conta?" : "Já tem uma conta?"}
+            </span>
+            <button
+              type="button"
+              className={styles.switchAction}
+              onClick={() => handleModeChange(mode === "sign-in" ? "sign-up" : "sign-in")}
+              disabled={isSubmitting}
+            >
+              {mode === "sign-in" ? "Registre-se" : "Entrar"}
+            </button>
+          </div>
         </form>
       </section>
     </div>

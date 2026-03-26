@@ -16,8 +16,8 @@ const VideoBanner = ({
     src,
     poster,
     ariaLabel = "Video em loop do litoral do Piaui",
-    eyebrow = "Concierge digital para o turismo no Piauí",
     titleMain = "Concierge",
+    eyebrow = "digital para o turismo no Piauí",
     titleSecondary = "",
     supportingCopy = "Recomendações locais e apoio rápido para planejar melhor cada etapa da viagem.",
     metaCopy = "•Experiências • Atendimento Personalizado",
@@ -51,13 +51,13 @@ const VideoBanner = ({
             {hasContent ? (
                 <div className={styles.content}>
                     <div className={styles.capsule}>
-                        {eyebrow ? <span className={styles.eyebrow}>{eyebrow}</span> : null}
                         {titleMain || titleSecondary ? (
                             <div className={styles.titleBlock}>
                                 {titleMain ? <strong className={styles.titleMain}>{titleMain}</strong> : null}
                                 {titleSecondary ? <span className={styles.titleSecondary}>{titleSecondary}</span> : null}
                             </div>
                         ) : null}
+                        {eyebrow ? <span className={styles.eyebrow}>{eyebrow}</span> : null}
 
                         {supportingCopy ? <p className={styles.supportingCopy}>{supportingCopy}</p> : null}
                         {metaCopy ? <span className={styles.metaCopy}>{metaCopy}</span> : null}

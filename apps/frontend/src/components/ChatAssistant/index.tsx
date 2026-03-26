@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "motion/react";
 import { IoSend } from "react-icons/io5";
 import { FiMinus } from "react-icons/fi";
 import { sendMessageToAgent } from "../../services/chatAgent";
@@ -427,15 +428,102 @@ const ChatAssistant = () => {
       )}
 
       {!isOpen && (
-        <button
+        <motion.button
           type="button"
           className={styles.floatingButton}
           onClick={toggleOpen}
           aria-label="Abrir assistente"
+          initial={false}
+          animate={{ scale: [1, 1.024, 1] }}
+          transition={{
+            duration: 5.6,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          whileHover={{ scale: 1.045 }}
+          whileTap={{ scale: 0.96 }}
         >
-          <img src="/loira.png" alt="Abrir chat da Lia" className={styles.floatingAvatar} />
+          <motion.span
+            className={styles.launcherCore}
+            aria-hidden="true"
+            animate={{
+              scale: [1, 1.012, 1],
+            }}
+            transition={{
+              duration: 5.2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          >
+            <span className={styles.launcherInnerGlow} aria-hidden="true" />
+            <motion.svg
+              className={styles.launcherSvg}
+              viewBox="0 0 120 120"
+              aria-hidden="true"
+              animate={{ rotate: [0, 8, 0, -8, 0] }}
+              transition={{
+                duration: 7.8,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              <defs>
+                <filter id="lia-orb-blur" x="-40%" y="-40%" width="180%" height="180%">
+                  <feGaussianBlur stdDeviation="7.5" />
+                </filter>
+                <filter id="lia-orb-soft" x="-40%" y="-40%" width="180%" height="180%">
+                  <feGaussianBlur stdDeviation="5.5" />
+                </filter>
+                <radialGradient id="lia-orb-core" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
+                  <stop offset="26%" stopColor="rgba(255, 236, 242, 0.94)" />
+                  <stop offset="56%" stopColor="rgba(255, 142, 168, 0.58)" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                </radialGradient>
+              </defs>
+
+              <motion.g
+                filter="url(#lia-orb-blur)"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+                style={{ transformOrigin: "center" }}
+              >
+                <ellipse cx="60" cy="38" rx="18" ry="31" fill="rgba(255, 142, 168, 0.56)" transform="rotate(10 60 38)" />
+                <ellipse cx="41" cy="61" rx="17" ry="31" fill="rgba(255, 79, 121, 0.42)" transform="rotate(-50 41 61)" />
+                <ellipse cx="80" cy="61" rx="17" ry="31" fill="rgba(255, 162, 188, 0.34)" transform="rotate(52 80 61)" />
+                <ellipse cx="60" cy="82" rx="16" ry="29" fill="rgba(239, 27, 79, 0.28)" transform="rotate(176 60 82)" />
+              </motion.g>
+
+              <motion.g
+                filter="url(#lia-orb-soft)"
+                animate={{ rotate: -360 }}
+                transition={{ duration: 10.5, repeat: Infinity, ease: "linear" }}
+                style={{ transformOrigin: "center" }}
+              >
+                <ellipse cx="58" cy="52" rx="22" ry="12" fill="rgba(255,255,255,0.24)" transform="rotate(22 58 52)" />
+                <ellipse cx="66" cy="66" rx="20" ry="10" fill="rgba(255, 142, 168, 0.2)" transform="rotate(-38 66 66)" />
+                <ellipse cx="52" cy="66" rx="18" ry="10" fill="rgba(255, 79, 121, 0.18)" transform="rotate(70 52 66)" />
+              </motion.g>
+
+              <motion.circle
+                cx="60"
+                cy="60"
+                r="20"
+                fill="url(#lia-orb-core)"
+                animate={{
+                  r: [19, 22, 19],
+                  opacity: [0.9, 1, 0.9],
+                }}
+                transition={{
+                  duration: 2.8,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+            </motion.svg>
+          </motion.span>
           {unreadCount > 0 && <span className={styles.badge}>{unreadCount}</span>}
-        </button>
+        </motion.button>
       )}
     </div>
   );
