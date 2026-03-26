@@ -55,8 +55,8 @@ const TourismShowcase = () => {
         >
           <div className={styles.blobLarge}>
             <img
-              src="/assets/turismo/peninsula-marau.jpg"
-              alt="Paisagem da Peninsula de Marau"
+              src="/passaros.jpg"
+              alt="Pássaros sobrevoando o litoral do Piauí"
               className={styles.blobImage}
               loading="eager"
               fetchPriority="high"
@@ -153,8 +153,8 @@ const TourismShowcase = () => {
         >
           <div className={styles.blobSmall}>
             <img
-              src="/assets/turismo/melancieiras.jpg"
-              alt="Paisagem em Melancieiras no Delta do Parnaiba"
+              src="/assets/turismo/peninsula-marau.jpg"
+              alt="Paisagem litorânea com águas cristalinas e faixa de areia"
               className={styles.blobImage}
               loading="lazy"
               decoding="async"

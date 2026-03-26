@@ -27,6 +27,8 @@ const languageOptions = [
 ] as const;
 
 const MOBILE_BREAKPOINT_QUERY = "(max-width: 860px)";
+const COMPACT_ENTER_SCROLL_Y = 132;
+const COMPACT_EXIT_SCROLL_Y = 56;
 type AuthModalMode = "sign-in" | "sign-up";
 
 const Header = () => {
@@ -40,53 +42,64 @@ const Header = () => {
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] =
     useState<(typeof languageOptions)[number]["code"]>("pt-BR");
-  const compactSentinelRef = useRef<HTMLDivElement | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const languageMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const sentinelElement = compactSentinelRef.current;
-    if (!sentinelElement) return;
-
     const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
-    const syncCompactState = () => {
+    let frameId = 0;
+
+    const syncCompactState = (scrollY: number) => {
       if (mediaQuery.matches) {
         setIsCompact(false);
         return;
       }
 
-      setIsCompact(sentinelElement.getBoundingClientRect().bottom <= 0);
-    };
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (mediaQuery.matches) {
-          setIsCompact(false);
-          return;
+      setIsCompact((previousState) => {
+        if (scrollY >= COMPACT_ENTER_SCROLL_Y) {
+          return true;
         }
 
-        setIsCompact(!entry.isIntersecting);
-      },
-      { threshold: 0 },
-    );
+        if (scrollY <= COMPACT_EXIT_SCROLL_Y) {
+          return false;
+        }
 
-    observer.observe(sentinelElement);
-    syncCompactState();
+        return previousState;
+      });
+    };
+
+    const queueCompactSync = () => {
+      if (frameId) return;
+
+      frameId = window.requestAnimationFrame(() => {
+        frameId = 0;
+        syncCompactState(window.scrollY);
+      });
+    };
+
+    syncCompactState(window.scrollY);
 
     const handleMediaChange = () => {
       if (mediaQuery.matches) {
         setIsMobileSearchOpen(false);
       }
 
-      syncCompactState();
+      syncCompactState(window.scrollY);
     };
 
+    window.addEventListener("scroll", queueCompactSync, { passive: true });
+    window.addEventListener("resize", queueCompactSync);
     mediaQuery.addEventListener("change", handleMediaChange);
 
     return () => {
-      observer.disconnect();
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+
+      window.removeEventListener("scroll", queueCompactSync);
+      window.removeEventListener("resize", queueCompactSync);
       mediaQuery.removeEventListener("change", handleMediaChange);
     };
   }, []);
@@ -180,9 +193,11 @@ const Header = () => {
 
   return (
     <>
-      <div ref={compactSentinelRef} className={styles.compactSentinel} aria-hidden="true" />
-
-      <div className={styles.headerShell}>
+      <div
+        className={`${styles.headerShell} ${
+          isCompact ? styles.headerShellCompact : styles.headerShellExpanded
+        }`}
+      >
         <header className={`${styles.header} ${isCompact ? styles.compact : ""}`}>
           <div className={styles.topBar}>
             <a href="#" className={styles.brand} aria-label="ConciergeHub">

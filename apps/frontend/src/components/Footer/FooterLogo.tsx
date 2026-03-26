@@ -1,16 +1,19 @@
-import Logo from "../Logo/Index";
 import styles from "./Footer.module.css";
 
 const FooterLogo = () => {
   return (
     <div className={styles.logo}>
-      <Logo
-        src="/logo-concierge-hub.png"
-        alt="Logo ConciergeHub"
-        className={styles.logoImage}
-        loading="lazy"
-        decoding="async"
-      />
+      <a href="#" className={styles.brand} aria-label="ConciergeHub">
+        <img
+          src="/icon-concierge.png"
+          alt=""
+          aria-hidden="true"
+          className={styles.brandIcon}
+          loading="lazy"
+          decoding="async"
+        />
+        <span className={styles.brandText}>ConciergeHub</span>
+      </a>
     </div>
   );
 };

@@ -17,19 +17,41 @@
 }
 
 .logo {
-  width: min(20rem, 100%);
+  width: min(22rem, 100%);
   margin: 0;
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
 }
 
-.logoImage {
-  width: clamp(12.5rem, 16vw, 16.5rem);
-  height: auto;
-  display: block;
-  margin: 0;
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.48rem;
+  text-decoration: none;
+  flex: 0 0 auto;
+}
+
+.brandIcon {
+  width: clamp(1.9rem, 2.5vw, 2.2rem);
+  height: clamp(1.9rem, 2.5vw, 2.2rem);
   object-fit: contain;
+  display: block;
+  border-radius: 999px;
+}
+
+.brandText {
+  display: inline-block;
+  font-size: clamp(1.2rem, 1.7vw, 1.62rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: 0.01em;
+  padding-bottom: 0.08em;
+  color: #ff2f63;
+  background: linear-gradient(120deg, #ff8ea8 0%, #ff4f79 45%, #ef1b4f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .logoText {
@@ -152,8 +174,8 @@
     justify-content: center;
   }
 
-  .logoImage {
-    width: min(16rem, 100%);
+  .brand {
+    justify-content: center;
   }
 
   .desenvolvimento {
