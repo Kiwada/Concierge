@@ -3,8 +3,6 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-COPY apps/frontend/package.json apps/frontend/package.json
-COPY apps/backend/package.json apps/backend/package.json
 RUN npm ci
 
 COPY . .
@@ -18,12 +16,12 @@ ENV VITE_WS_URL=${VITE_WS_URL}
 ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
 ENV VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
 
-RUN npm run build --workspace apps/frontend
+RUN npm run build
 
 FROM nginx:1.27-alpine AS runtime
 
-COPY apps/frontend/nginx/default.conf /etc/nginx/conf.d/default.conf
-COPY --from=builder /app/apps/frontend/dist /usr/share/nginx/html
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 80
 
