@@ -1,7 +1,5 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -9,29 +7,12 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
-
-type AuthCredentials = {
-  email: string;
-  password: string;
-};
-
-type SignUpPayload = AuthCredentials & {
-  fullName?: string;
-};
-
-type AuthContextValue = {
-  isConfigured: boolean;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  user: User | null;
-  session: Session | null;
-  accessToken: string | null;
-  signInWithPassword: (credentials: AuthCredentials) => Promise<void>;
-  signUpWithPassword: (payload: SignUpPayload) => Promise<void>;
-  signOut: () => Promise<void>;
-};
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+import {
+  AuthContext,
+  type AuthContextValue,
+  type AuthCredentials,
+  type SignUpPayload,
+} from "./auth-context";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -133,14 +114,4 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-
-  return context;
 };

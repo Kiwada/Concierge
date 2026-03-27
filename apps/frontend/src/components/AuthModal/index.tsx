@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { FiLock, FiMail, FiUser, FiX } from "react-icons/fi";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../contexts/useAuth";
 import styles from "./AuthModal.module.css";
 
 type AuthModalProps = {

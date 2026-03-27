@@ -5,7 +5,7 @@ import { IoSend } from "react-icons/io5";
 import { FiMinus } from "react-icons/fi";
 import { sendMessageToAgent } from "../../services/chatAgent";
 import { getUserProfile, saveUserProfilePatch, type UserProfile } from "../../services/userProfile";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../contexts/useAuth";
 import styles from "./ChatAssistant.module.css";
 
 interface ChatMessage {

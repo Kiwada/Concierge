@@ -11,7 +11,7 @@ import {
   FiUserPlus,
 } from "react-icons/fi";
 import AuthModal from "../AuthModal";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../contexts/useAuth";
 import styles from "./Header.module.css";
 
 const navItems = [
