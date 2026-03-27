@@ -182,6 +182,12 @@
   opacity: 0.72;
 }
 
+.authActionLocked {
+  filter: blur(4px);
+  opacity: 0.58;
+  box-shadow: none;
+}
+
 .authButtonLogged {
   background: #ffffff;
   color: #111827;
@@ -256,6 +262,14 @@
   background: #f8fafc;
   transform: translateY(-1px);
   box-shadow: inset 0 0 0 1px #e2e8f0;
+}
+
+.accountMenuItemLocked {
+  filter: blur(4px);
+  opacity: 0.56;
+  pointer-events: none;
+  transform: none;
+  box-shadow: none;
 }
 
 .accountMenuItemPrimary {

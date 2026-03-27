@@ -37,6 +37,7 @@ const Header = () => {
   const [isCompact, setIsCompact] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<AuthModalMode>("sign-in");
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
@@ -117,6 +118,31 @@ const Header = () => {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleChatState = (event: Event) => {
+      const customEvent = event as CustomEvent<{ open?: boolean }>;
+      setIsChatOpen(Boolean(customEvent.detail?.open));
+    };
+
+    window.addEventListener("concierge:chat-state", handleChatState as EventListener);
+
+    return () => {
+      window.removeEventListener("concierge:chat-state", handleChatState as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    window.dispatchEvent(
+      new CustomEvent("concierge:auth-modal-state", {
+        detail: { open: isAuthModalOpen },
+      }),
+    );
+  }, [isAuthModalOpen]);
+
+  useEffect(() => {
     if (!isLanguageMenuOpen && !isAccountMenuOpen) return;
 
     const handlePointerDown = (event: MouseEvent) => {
@@ -171,6 +197,10 @@ const Header = () => {
   }, [user]);
 
   const openAuthModal = (mode: AuthModalMode) => {
+    if (isChatOpen) {
+      return;
+    }
+
     setAuthModalMode(mode);
     setIsAccountMenuOpen(false);
     setIsLanguageMenuOpen(false);
@@ -280,7 +310,7 @@ const Header = () => {
                   type="button"
                   className={styles.authButton}
                   onClick={() => openAuthModal("sign-in")}
-                  disabled={isLoading}
+                  disabled={isLoading || isChatOpen}
                 >
                   {isLoading ? "Carregando..." : isConfigured ? "Entrar" : "Login"}
                 </button>
@@ -425,9 +455,12 @@ const Header = () => {
                       <>
                         <button
                           type="button"
-                          className={`${styles.accountMenuItem} ${styles.accountMenuItemPrimary}`}
+                          className={`${styles.accountMenuItem} ${styles.accountMenuItemPrimary} ${
+                            isChatOpen ? styles.accountMenuItemLocked : ""
+                          }`}
                           role="menuitem"
                           onClick={() => openAuthModal("sign-in")}
+                          disabled={isChatOpen}
                         >
                           <span className={styles.accountMenuIcon} aria-hidden="true">
                             <FiLogIn />
@@ -442,9 +475,12 @@ const Header = () => {
 
                         <button
                           type="button"
-                          className={`${styles.accountMenuItem} ${styles.accountMenuItemPrimary}`}
+                          className={`${styles.accountMenuItem} ${styles.accountMenuItemPrimary} ${
+                            isChatOpen ? styles.accountMenuItemLocked : ""
+                          }`}
                           role="menuitem"
                           onClick={() => openAuthModal("sign-up")}
+                          disabled={isChatOpen}
                         >
                           <span className={styles.accountMenuIcon} aria-hidden="true">
                             <FiUserPlus />

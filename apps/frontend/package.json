@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@lottiefiles/dotlottie-react": "^0.18.7",
     "@supabase/supabase-js": "^2.99.2",
     "class": "^0.1.4",
     "classnames": "^2.5.1",

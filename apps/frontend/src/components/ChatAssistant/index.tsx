@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { motion } from "motion/react";
 import { IoSend } from "react-icons/io5";
 import { FiMinus } from "react-icons/fi";
@@ -152,6 +153,7 @@ const buildProfileAcknowledgement = (step: ProfilePromptStep, value: string) => 
 const ChatAssistant = () => {
   const { accessToken, isAuthenticated, isConfigured, isLoading, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [input, setInput] = useState("");
   const [unreadCount, setUnreadCount] = useState(1);
   const [isSending, setIsSending] = useState(false);
@@ -197,6 +199,7 @@ const ChatAssistant = () => {
     if (typeof window === "undefined") return;
 
     const handleOpenChat = () => {
+      if (isAuthModalOpen) return;
       setIsOpen(true);
       setUnreadCount(0);
     };
@@ -206,7 +209,40 @@ const ChatAssistant = () => {
     return () => {
       window.removeEventListener("concierge:open-chat", handleOpenChat);
     };
+  }, [isAuthModalOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleAuthModalState = (event: Event) => {
+      const customEvent = event as CustomEvent<{ open?: boolean }>;
+      const nextOpen = Boolean(customEvent.detail?.open);
+      setIsAuthModalOpen(nextOpen);
+
+      if (nextOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("concierge:auth-modal-state", handleAuthModalState as EventListener);
+
+    return () => {
+      window.removeEventListener(
+        "concierge:auth-modal-state",
+        handleAuthModalState as EventListener,
+      );
+    };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    window.dispatchEvent(
+      new CustomEvent("concierge:chat-state", {
+        detail: { open: isOpen },
+      }),
+    );
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isConfigured || !isAuthenticated || !user?.id) {
@@ -290,6 +326,8 @@ const ChatAssistant = () => {
   };
 
   const toggleOpen = () => {
+    if (isAuthModalOpen) return;
+
     setIsOpen((prev) => !prev);
     if (!isOpen) {
       setUnreadCount(0);
@@ -299,6 +337,15 @@ const ChatAssistant = () => {
   const sendMessage = async () => {
     const text = input.trim();
     if (!text || isSending) return;
+
+    const userMessage: ChatMessage = {
+      id: `u-${Date.now()}`,
+      author: "user",
+      text,
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
 
     if (!isConfigured) {
       appendAssistantMessage(
@@ -313,15 +360,6 @@ const ChatAssistant = () => {
       );
       return;
     }
-
-    const userMessage: ChatMessage = {
-      id: `u-${Date.now()}`,
-      author: "user",
-      text,
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
     setIsSending(true);
 
     try {
@@ -353,7 +391,10 @@ const ChatAssistant = () => {
   };
 
   return (
-    <div className={styles.chatRoot}>
+    <div
+      className={`${styles.chatRoot} ${isAuthModalOpen ? styles.chatRootLocked : ""}`}
+      aria-hidden={isAuthModalOpen && !isOpen}
+    >
       {isOpen && (
         <section className={styles.chatPanel} aria-label="Assistente virtual Lia">
           <header className={styles.header}>
@@ -366,8 +407,12 @@ const ChatAssistant = () => {
               <FiMinus />
             </button>
             <div className={styles.avatarWrap}>
-              <img src="/loira.png" alt="Assistente Lia" className={styles.avatar} />
-              <span className={styles.onlineDot} />
+              <DotLottieReact
+                className={styles.avatarPlayer}
+                src="/lottie/assistant-concierge.lottie"
+                loop
+                autoplay
+              />
             </div>
             <strong className={styles.title}>Lia Concierge</strong>
             <span className={styles.subtitle}>{connectionLabel}</span>
@@ -381,12 +426,12 @@ const ChatAssistant = () => {
                   message.author === "assistant" ? styles.assistant : styles.user
                 }`}
               >
-                {message.text}
+                <p className={styles.messageText}>{message.text}</p>
               </article>
             ))}
             {isSending && (
               <article className={`${styles.message} ${styles.assistant} ${styles.typing}`}>
-                Lia está digitando...
+                <p className={styles.messageText}>Lia está digitando...</p>
               </article>
             )}
             <div ref={endRef} />
@@ -407,7 +452,7 @@ const ChatAssistant = () => {
                 !isConfigured
                   ? "Configure o login para usar o atendimento"
                   : isAuthenticated
-                    ? "Digite sua mensagem"
+                    ? "Escreva sua mensagem para a Lia"
                     : "Entre para conversar com contexto"
               }
               className={styles.input}
@@ -455,72 +500,12 @@ const ChatAssistant = () => {
               ease: "easeInOut",
             }}
           >
-            <span className={styles.launcherInnerGlow} aria-hidden="true" />
-            <motion.svg
-              className={styles.launcherSvg}
-              viewBox="0 0 120 120"
-              aria-hidden="true"
-              animate={{ rotate: [0, 8, 0, -8, 0] }}
-              transition={{
-                duration: 7.8,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            >
-              <defs>
-                <filter id="lia-orb-blur" x="-40%" y="-40%" width="180%" height="180%">
-                  <feGaussianBlur stdDeviation="7.5" />
-                </filter>
-                <filter id="lia-orb-soft" x="-40%" y="-40%" width="180%" height="180%">
-                  <feGaussianBlur stdDeviation="5.5" />
-                </filter>
-                <radialGradient id="lia-orb-core" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
-                  <stop offset="26%" stopColor="rgba(255, 236, 242, 0.94)" />
-                  <stop offset="56%" stopColor="rgba(255, 142, 168, 0.58)" />
-                  <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-                </radialGradient>
-              </defs>
-
-              <motion.g
-                filter="url(#lia-orb-blur)"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-                style={{ transformOrigin: "center" }}
-              >
-                <ellipse cx="60" cy="38" rx="18" ry="31" fill="rgba(255, 142, 168, 0.56)" transform="rotate(10 60 38)" />
-                <ellipse cx="41" cy="61" rx="17" ry="31" fill="rgba(255, 79, 121, 0.42)" transform="rotate(-50 41 61)" />
-                <ellipse cx="80" cy="61" rx="17" ry="31" fill="rgba(255, 162, 188, 0.34)" transform="rotate(52 80 61)" />
-                <ellipse cx="60" cy="82" rx="16" ry="29" fill="rgba(239, 27, 79, 0.28)" transform="rotate(176 60 82)" />
-              </motion.g>
-
-              <motion.g
-                filter="url(#lia-orb-soft)"
-                animate={{ rotate: -360 }}
-                transition={{ duration: 10.5, repeat: Infinity, ease: "linear" }}
-                style={{ transformOrigin: "center" }}
-              >
-                <ellipse cx="58" cy="52" rx="22" ry="12" fill="rgba(255,255,255,0.24)" transform="rotate(22 58 52)" />
-                <ellipse cx="66" cy="66" rx="20" ry="10" fill="rgba(255, 142, 168, 0.2)" transform="rotate(-38 66 66)" />
-                <ellipse cx="52" cy="66" rx="18" ry="10" fill="rgba(255, 79, 121, 0.18)" transform="rotate(70 52 66)" />
-              </motion.g>
-
-              <motion.circle
-                cx="60"
-                cy="60"
-                r="20"
-                fill="url(#lia-orb-core)"
-                animate={{
-                  r: [19, 22, 19],
-                  opacity: [0.9, 1, 0.9],
-                }}
-                transition={{
-                  duration: 2.8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              />
-            </motion.svg>
+            <DotLottieReact
+              className={styles.launcherPlayer}
+              src="/lottie/assistant-concierge.lottie"
+              loop
+              autoplay
+            />
           </motion.span>
           {unreadCount > 0 && <span className={styles.badge}>{unreadCount}</span>}
         </motion.button>
