@@ -1,9 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { motion } from "motion/react";
 import { IoSend } from "react-icons/io5";
 import { FiMinus } from "react-icons/fi";
-import { sendMessageToAgent } from "../../services/chatAgent";
+import {
+  enqueueMessageToAgent,
+  isAsyncChatTransportEnabled,
+  sendMessageToAgent,
+  subscribeToAgentEvents,
+  type ChatStreamEvent,
+} from "../../services/chatAgent";
 import { getUserProfile, saveUserProfilePatch, type UserProfile } from "../../services/userProfile";
 import { useAuth } from "../../contexts/useAuth";
 import styles from "./ChatAssistant.module.css";
@@ -13,6 +19,17 @@ interface ChatMessage {
   author: "assistant" | "user";
   text: string;
 }
+
+type AgentStreamStatus =
+  | {
+      status: "buffering";
+      queuedMessages: number;
+      bufferWindowMs: number;
+    }
+  | {
+      status: "processing";
+    }
+  | null;
 
 type ProfilePromptStep =
   | "origin_city"
@@ -157,6 +174,7 @@ const ChatAssistant = () => {
   const [input, setInput] = useState("");
   const [unreadCount, setUnreadCount] = useState(1);
   const [isSending, setIsSending] = useState(false);
+  const [agentStreamStatus, setAgentStreamStatus] = useState<AgentStreamStatus>(null);
   const [profilePromptStep, setProfilePromptStep] = useState<ProfilePromptStep | null>(null);
   const [, setProfile] = useState<UserProfile | null>(null);
   const [sessionId, setSessionId] = useState(() => {
@@ -173,8 +191,21 @@ const ChatAssistant = () => {
   const endRef = useRef<HTMLDivElement | null>(null);
   const isOpenRef = useRef(isOpen);
   const promptedProfileUserIdRef = useRef<string | null>(null);
+  const streamAbortRef = useRef<AbortController | null>(null);
+  const streamedSessionIdRef = useRef<string | null>(null);
 
   const canSend = useMemo(() => input.trim().length > 0, [input]);
+  const statusText = useMemo(() => {
+    if (!agentStreamStatus) return null;
+
+    if (agentStreamStatus.status === "buffering") {
+      return agentStreamStatus.queuedMessages > 1
+        ? "Lia está organizando suas mensagens..."
+        : "Lia está organizando sua mensagem...";
+    }
+
+    return "Lia está preparando sua resposta...";
+  }, [agentStreamStatus]);
   const connectionLabel = useMemo(() => {
     if (!isConfigured) return "autenticação indisponível";
     if (isLoading) return "verificando conexão";
@@ -189,11 +220,17 @@ const ChatAssistant = () => {
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, isSending, isOpen]);
+  }, [messages, statusText, isOpen]);
 
   useEffect(() => {
     isOpenRef.current = isOpen;
   }, [isOpen]);
+
+  useEffect(() => {
+    return () => {
+      streamAbortRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -246,6 +283,10 @@ const ChatAssistant = () => {
 
   useEffect(() => {
     if (!isConfigured || !isAuthenticated || !user?.id) {
+      streamAbortRef.current?.abort();
+      streamAbortRef.current = null;
+      streamedSessionIdRef.current = null;
+      setAgentStreamStatus(null);
       setProfile(null);
       setProfilePromptStep(null);
       promptedProfileUserIdRef.current = null;
@@ -325,6 +366,65 @@ const ChatAssistant = () => {
     }
   };
 
+  const handleAgentStreamEvent = useCallback((event: ChatStreamEvent) => {
+    switch (event.type) {
+      case "connected":
+      case "ping":
+        return;
+      case "buffering":
+        setAgentStreamStatus({
+          status: "buffering",
+          queuedMessages: event.payload.queuedMessages,
+          bufferWindowMs: event.payload.bufferWindowMs,
+        });
+        return;
+      case "processing":
+        setAgentStreamStatus({
+          status: "processing",
+        });
+        return;
+      case "reply":
+        setAgentStreamStatus(null);
+        appendAssistantMessage(event.payload.reply);
+        return;
+      case "error":
+        setAgentStreamStatus(null);
+        appendAssistantMessage(event.payload.message);
+        return;
+    }
+  }, []);
+
+  const ensureAgentStream = useCallback(
+    (targetSessionId: string) => {
+      if (!isAsyncChatTransportEnabled) return;
+      if (!isAuthenticated || !accessToken) return;
+      if (streamedSessionIdRef.current === targetSessionId && streamAbortRef.current) return;
+
+      streamAbortRef.current?.abort();
+
+      const nextAbortController = new AbortController();
+      streamAbortRef.current = nextAbortController;
+      streamedSessionIdRef.current = targetSessionId;
+
+      void subscribeToAgentEvents({
+        sessionId: targetSessionId,
+        signal: nextAbortController.signal,
+        onEvent: handleAgentStreamEvent,
+      }).catch((error) => {
+        if (nextAbortController.signal.aborted) return;
+
+        setAgentStreamStatus(null);
+        appendAssistantMessage(
+          error instanceof Error
+            ? error.message
+            : "Nao consegui acompanhar o status do atendimento agora.",
+        );
+        console.error("chat-agent-events-error", error);
+      });
+    },
+    [accessToken, handleAgentStreamEvent, isAuthenticated],
+  );
+
   const toggleOpen = () => {
     if (isAuthModalOpen) return;
 
@@ -368,6 +468,25 @@ const ChatAssistant = () => {
         return;
       }
 
+      if (isAsyncChatTransportEnabled) {
+        const accepted = await enqueueMessageToAgent({
+          message: text,
+          sessionId,
+        });
+
+        if (accepted.sessionId !== sessionId) {
+          setSessionId(accepted.sessionId);
+        }
+
+        setAgentStreamStatus({
+          status: "buffering",
+          queuedMessages: 1,
+          bufferWindowMs: accepted.bufferWindowMs,
+        });
+        ensureAgentStream(accepted.sessionId);
+        return;
+      }
+
       const response = await sendMessageToAgent({
         message: text,
         sessionId,
@@ -379,6 +498,7 @@ const ChatAssistant = () => {
 
       appendAssistantMessage(response.reply);
     } catch (error) {
+      setAgentStreamStatus(null);
       appendAssistantMessage(
         error instanceof Error
           ? error.message
@@ -429,9 +549,9 @@ const ChatAssistant = () => {
                 <p className={styles.messageText}>{message.text}</p>
               </article>
             ))}
-            {isSending && (
+            {statusText && (
               <article className={`${styles.message} ${styles.assistant} ${styles.typing}`}>
-                <p className={styles.messageText}>Lia está digitando...</p>
+                <p className={styles.messageText}>{statusText}</p>
               </article>
             )}
             <div ref={endRef} />
@@ -456,14 +576,14 @@ const ChatAssistant = () => {
                     : "Entre para conversar com contexto"
               }
               className={styles.input}
-              disabled={isSending}
+              disabled={isSending && Boolean(profilePromptStep)}
               aria-label="Digite sua mensagem"
             />
             <button
               type="button"
               onClick={() => void sendMessage()}
               className={styles.sendButton}
-              disabled={!canSend || isSending}
+              disabled={!canSend || (isSending && Boolean(profilePromptStep))}
               aria-label="Enviar mensagem"
             >
               <IoSend />

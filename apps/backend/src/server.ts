@@ -1,32 +1,54 @@
 import "dotenv/config";
-import { createServer } from "node:http";
+import Fastify from "fastify";
 import { env } from "./config/env.js";
-import { buildCorsHeaders, sendJson } from "./lib/http.js";
-import { handleChatRoute } from "./routes/chat.js";
+import { registerChatCallbackRoute } from "./routes/chat-callback.js";
+import { registerChatEventsRoute } from "./routes/chat-events.js";
+import { registerChatMessagesRoute } from "./routes/chat-messages.js";
+import { registerChatRoute } from "./routes/chat.js";
 
-const server = createServer(async (request, response) => {
-  const baseUrl = `http://${request.headers.host ?? "localhost"}`;
-  const url = new URL(request.url ?? "/", baseUrl);
-
-  if (request.method === "OPTIONS") {
-    response.writeHead(204, buildCorsHeaders(env.allowedOrigin));
-    response.end();
-    return;
-  }
-
-  if (request.method === "GET" && url.pathname === "/healthz") {
-    sendJson(response, 200, { status: "ok" }, env.allowedOrigin);
-    return;
-  }
-
-  if (request.method === "POST" && url.pathname === "/api/chat") {
-    await handleChatRoute(request, response);
-    return;
-  }
-
-  sendJson(response, 404, { error: "Route not found." }, env.allowedOrigin);
+const app = Fastify({
+  logger: true,
 });
 
-server.listen(env.port, () => {
-  console.info(`Concierge backend listening on http://localhost:${env.port}`);
+app.addHook("onRequest", async (_request, reply) => {
+  reply.header("Access-Control-Allow-Origin", env.allowedOrigin);
+  reply.header(
+    "Access-Control-Allow-Headers",
+    "authorization, x-client-info, apikey, content-type",
+  );
+  reply.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  reply.header("Cache-Control", "no-store");
 });
+
+app.options("/*", async (_request, reply) => {
+  reply.code(204).send();
+});
+
+app.get("/healthz", async () => ({
+  status: "ok",
+}));
+
+registerChatRoute(app);
+registerChatMessagesRoute(app);
+registerChatEventsRoute(app);
+registerChatCallbackRoute(app);
+
+app.setNotFoundHandler(async (_request, reply) => {
+  reply.code(404).send({ error: "Route not found." });
+});
+
+const start = async () => {
+  try {
+    await app.listen({
+      host: "0.0.0.0",
+      port: env.port,
+    });
+
+    console.info(`Concierge backend listening on http://localhost:${env.port}`);
+  } catch (error) {
+    app.log.error(error);
+    process.exit(1);
+  }
+};
+
+void start();

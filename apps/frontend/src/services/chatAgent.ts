@@ -5,12 +5,66 @@ type ChatPayload = {
   sessionId: string;
 };
 
+export type ChatAccepted = {
+  accepted: true;
+  sessionId: string;
+  status: "buffering";
+  bufferWindowMs: number;
+};
+
 export type ChatReply = {
   reply: string;
   sessionId: string;
 };
 
+export type ChatStreamEvent =
+  | {
+      type: "connected";
+      payload: {
+        sessionId: string;
+      };
+    }
+  | {
+      type: "buffering";
+      payload: {
+        sessionId: string;
+        status: "buffering";
+        bufferWindowMs: number;
+        queuedMessages: number;
+      };
+    }
+  | {
+      type: "processing";
+      payload: {
+        sessionId: string;
+        status: "processing";
+      };
+    }
+  | {
+      type: "reply";
+      payload: {
+        sessionId: string;
+        messageId: string;
+        reply: string;
+        createdAt: string;
+      };
+    }
+  | {
+      type: "error";
+      payload: {
+        sessionId: string;
+        message: string;
+      };
+    }
+  | {
+      type: "ping";
+      payload: {
+        ts: string;
+      };
+    };
+
 const apiBaseUrl = import.meta.env.VITE_API_URL?.trim()?.replace(/\/+$/, "") ?? "";
+export const isAsyncChatTransportEnabled = Boolean(apiBaseUrl);
 
 const CANDIDATE_REPLY_KEYS = [
   "reply",
@@ -100,7 +154,7 @@ const extractErrorMessage = (value: unknown): string | null => {
   );
 };
 
-const invokeNodeBackend = async (payload: ChatPayload): Promise<ChatReply> => {
+const getAccessToken = async () => {
   if (!supabase) {
     throw new Error(
       "Supabase nao configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.",
@@ -117,6 +171,12 @@ const invokeNodeBackend = async (payload: ChatPayload): Promise<ChatReply> => {
   if (sessionError || !accessToken) {
     throw new Error("Sessao autenticada nao encontrada. Entre novamente para usar o concierge.");
   }
+
+  return accessToken;
+};
+
+const invokeNodeBackend = async (payload: ChatPayload): Promise<ChatReply> => {
+  const accessToken = await getAccessToken();
 
   const response = await fetch(`${apiBaseUrl}/api/chat`, {
     method: "POST",
@@ -162,6 +222,193 @@ const invokeNodeBackend = async (payload: ChatPayload): Promise<ChatReply> => {
   const sessionId = extractSessionId(body) || payload.sessionId;
 
   return { reply, sessionId };
+};
+
+export const enqueueMessageToAgent = async (
+  payload: ChatPayload,
+): Promise<ChatAccepted> => {
+  if (!apiBaseUrl) {
+    throw new Error("VITE_API_URL nao configurado para o fluxo assincrono do concierge.");
+  }
+
+  const accessToken = await getAccessToken();
+
+  const response = await fetch(`${apiBaseUrl}/api/chat/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (!response.ok) {
+    let errorMessage = "Nao consegui enfileirar sua mensagem agora. Tente novamente em instantes.";
+
+    try {
+      if (contentType.includes("application/json")) {
+        const body = (await response.json()) as unknown;
+        errorMessage = extractErrorMessage(body) || errorMessage;
+      } else {
+        const rawText = (await response.text()).trim();
+        if (rawText) errorMessage = rawText;
+      }
+    } catch {
+      // Keep default message when the backend error response is unreadable.
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  const body = (await response.json()) as Partial<ChatAccepted> | null;
+
+  return {
+    accepted: true,
+    sessionId: body?.sessionId?.trim() || payload.sessionId,
+    status: "buffering",
+    bufferWindowMs:
+      typeof body?.bufferWindowMs === "number" && Number.isFinite(body.bufferWindowMs)
+        ? body.bufferWindowMs
+        : 4000,
+  };
+};
+
+const tryParseJson = (value: string) => {
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return value;
+  }
+};
+
+const parseEventChunk = (chunk: string): ChatStreamEvent[] => {
+  const events: ChatStreamEvent[] = [];
+  const normalizedChunk = chunk.replace(/\r/g, "");
+
+  for (const rawEvent of normalizedChunk.split("\n\n")) {
+    const trimmedEvent = rawEvent.trim();
+    if (!trimmedEvent) continue;
+
+    let eventType = "message";
+    const dataLines: string[] = [];
+
+    for (const line of trimmedEvent.split("\n")) {
+      if (line.startsWith("event:")) {
+        eventType = line.slice("event:".length).trim();
+        continue;
+      }
+
+      if (line.startsWith("data:")) {
+        dataLines.push(line.slice("data:".length).trim());
+      }
+    }
+
+    const payload = tryParseJson(dataLines.join("\n"));
+
+    if (
+      eventType === "connected" ||
+      eventType === "buffering" ||
+      eventType === "processing" ||
+      eventType === "reply" ||
+      eventType === "error" ||
+      eventType === "ping"
+    ) {
+      events.push({
+        type: eventType,
+        payload,
+      } as ChatStreamEvent);
+    }
+  }
+
+  return events;
+};
+
+export const subscribeToAgentEvents = async ({
+  sessionId,
+  signal,
+  onEvent,
+}: {
+  sessionId: string;
+  signal: AbortSignal;
+  onEvent: (event: ChatStreamEvent) => void;
+}) => {
+  if (!apiBaseUrl) {
+    throw new Error("VITE_API_URL nao configurado para o stream do concierge.");
+  }
+
+  const accessToken = await getAccessToken();
+
+  const response = await fetch(
+    `${apiBaseUrl}/api/chat/events/${encodeURIComponent(sessionId)}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      signal,
+    },
+  );
+
+  if (!response.ok) {
+    let errorMessage =
+      "Nao consegui abrir o stream de eventos do concierge. Tente novamente em instantes.";
+
+    try {
+      const contentType = response.headers.get("content-type") ?? "";
+
+      if (contentType.includes("application/json")) {
+        const body = (await response.json()) as unknown;
+        errorMessage = extractErrorMessage(body) || errorMessage;
+      } else {
+        const rawText = (await response.text()).trim();
+        if (rawText) errorMessage = rawText;
+      }
+    } catch {
+      // Keep default message when the stream error response is unreadable.
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  if (!response.body) {
+    throw new Error("O backend nao abriu um corpo de stream para o chat.");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (!signal.aborted) {
+    const { value, done } = await reader.read();
+
+    if (done) {
+      buffer += decoder.decode();
+      break;
+    }
+
+    buffer += decoder.decode(value, { stream: true });
+
+    let separatorIndex = buffer.indexOf("\n\n");
+
+    while (separatorIndex !== -1) {
+      const rawEvent = buffer.slice(0, separatorIndex);
+      buffer = buffer.slice(separatorIndex + 2);
+
+      for (const event of parseEventChunk(rawEvent)) {
+        onEvent(event);
+      }
+
+      separatorIndex = buffer.indexOf("\n\n");
+    }
+  }
+
+  if (buffer.trim()) {
+    for (const event of parseEventChunk(buffer)) {
+      onEvent(event);
+    }
+  }
 };
 
 export const sendMessageToAgent = async (payload: ChatPayload): Promise<ChatReply> => {
