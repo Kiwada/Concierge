@@ -138,18 +138,32 @@ export const callChatWebhook = async (
   }
 
   const contentType = upstreamResponse.headers.get("content-type") ?? "";
+  const rawBody = await upstreamResponse.text();
+  const trimmedBody = rawBody.trim();
 
-  if (!contentType.includes("application/json")) {
-    const rawText = (await upstreamResponse.text()).trim();
-
+  if (!trimmedBody) {
     return {
-      reply: rawText || null,
+      reply: null,
       sessionId: payload.sessionId,
-      raw: rawText,
+      raw: null,
     };
   }
 
-  const upstreamBody = (await upstreamResponse.json()) as unknown;
+  if (!contentType.includes("application/json")) {
+    return {
+      reply: trimmedBody,
+      sessionId: payload.sessionId,
+      raw: trimmedBody,
+    };
+  }
+
+  let upstreamBody: unknown;
+
+  try {
+    upstreamBody = JSON.parse(trimmedBody) as unknown;
+  } catch {
+    throw new RouteError(502, "Upstream n8n webhook returned invalid JSON.");
+  }
 
   return {
     reply: extractReply(upstreamBody),
