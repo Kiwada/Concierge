@@ -126,6 +126,57 @@ const normalizeBudgetProfile = (value: string): string => {
   return value.trim().toLowerCase();
 };
 
+const formatList = (items: string[]) => {
+  if (items.length === 0) return "";
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} e ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")} e ${items[items.length - 1]}`;
+};
+
+const formatBudgetLabel = (budgetProfile: string | null) => {
+  if (!budgetProfile) return null;
+
+  switch (budgetProfile) {
+    case "economico":
+      return "orçamento econômico";
+    case "medio":
+      return "orçamento médio";
+    case "premium":
+      return "orçamento premium";
+    default:
+      return `orçamento ${budgetProfile}`;
+  }
+};
+
+const buildProfileSummary = (profile: UserProfile) => {
+  const summaryParts: string[] = [];
+
+  if (profile.origin_city?.trim()) {
+    summaryParts.push(`vem de ${profile.origin_city.trim()}`);
+  }
+
+  if (profile.companions_summary?.trim()) {
+    summaryParts.push(`costuma viajar ${profile.companions_summary.trim()}`);
+  } else if (Array.isArray(profile.travel_style) && profile.travel_style.length > 0) {
+    summaryParts.push(`tem perfil de viagem ${formatList(profile.travel_style)}`);
+  }
+
+  if (Array.isArray(profile.interests) && profile.interests.length > 0) {
+    summaryParts.push(`busca ${formatList(profile.interests)}`);
+  }
+
+  const budgetLabel = formatBudgetLabel(profile.budget_profile);
+  if (budgetLabel) {
+    summaryParts.push(`prefere ${budgetLabel}`);
+  }
+
+  if (summaryParts.length === 0) {
+    return "Resumo do seu perfil: já tenho o contexto básico para personalizar melhor suas recomendações.";
+  }
+
+  return `Resumo do seu perfil: você ${summaryParts.join(", ")}.`;
+};
+
 const getNextMissingProfileStep = (profile: UserProfile | null): ProfilePromptStep | null => {
   if (!profile?.origin_city?.trim()) return "origin_city";
   if (!profile?.companions_summary?.trim()) return "companions_summary";
@@ -190,7 +241,7 @@ const ChatAssistant = () => {
   ]);
   const endRef = useRef<HTMLDivElement | null>(null);
   const isOpenRef = useRef(isOpen);
-  const promptedProfileUserIdRef = useRef<string | null>(null);
+  const promptedProfileStepRef = useRef<string | null>(null);
   const streamAbortRef = useRef<AbortController | null>(null);
   const streamedSessionIdRef = useRef<string | null>(null);
 
@@ -289,7 +340,7 @@ const ChatAssistant = () => {
       setAgentStreamStatus(null);
       setProfile(null);
       setProfilePromptStep(null);
-      promptedProfileUserIdRef.current = null;
+      promptedProfileStepRef.current = null;
       return;
     }
 
@@ -305,11 +356,17 @@ const ChatAssistant = () => {
         setProfile(currentProfile);
 
         const nextStep = getNextMissingProfileStep(currentProfile);
-        if (!nextStep || promptedProfileUserIdRef.current === user.id) {
+        if (!nextStep) {
+          promptedProfileStepRef.current = null;
           return;
         }
 
-        promptedProfileUserIdRef.current = user.id;
+        const promptKey = `${user.id}:${nextStep}`;
+        if (promptedProfileStepRef.current === promptKey && profilePromptStep === nextStep) {
+          return;
+        }
+
+        promptedProfileStepRef.current = promptKey;
         setProfilePromptStep(nextStep);
         appendAssistantMessage(
           "Antes de eu montar recomendações realmente úteis, quero entender seu perfil com 4 perguntas rápidas.",
@@ -325,7 +382,7 @@ const ChatAssistant = () => {
     return () => {
       isCancelled = true;
     };
-  }, [isAuthenticated, isConfigured, isOpen, user?.id]);
+  }, [isAuthenticated, isConfigured, isOpen, profilePromptStep, user?.id]);
 
   const handleProfilePromptAnswer = async (text: string) => {
     if (!profilePromptStep || !user?.id) {
@@ -339,14 +396,17 @@ const ChatAssistant = () => {
 
     const nextStep = getNextMissingProfileStep(updatedProfile);
     if (nextStep) {
+      promptedProfileStepRef.current = `${user.id}:${nextStep}`;
       setProfilePromptStep(nextStep);
       appendAssistantMessage(PROFILE_STEP_PROMPTS[nextStep]);
       return true;
     }
 
+    promptedProfileStepRef.current = null;
     setProfilePromptStep(null);
+    appendAssistantMessage(buildProfileSummary(updatedProfile));
     appendAssistantMessage(
-      "Pronto. Já tenho o básico do seu perfil e minhas próximas recomendações serão mais contextualizadas.",
+      "Pronto. Agora me diga o que você quer organizar e eu sigo com recomendações personalizadas.",
     );
 
     return true;
