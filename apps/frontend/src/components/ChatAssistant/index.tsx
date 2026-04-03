@@ -5,9 +5,11 @@ import { IoSend } from "react-icons/io5";
 import { FiMinus } from "react-icons/fi";
 import {
   enqueueMessageToAgent,
+  fetchChatHistory,
   isAsyncChatTransportEnabled,
   sendMessageToAgent,
   subscribeToAgentEvents,
+  type ChatHistoryMessage,
   type ChatStreamEvent,
 } from "../../services/chatAgent";
 import { getUserProfile, saveUserProfilePatch, type UserProfile } from "../../services/userProfile";
@@ -226,6 +228,13 @@ const buildProfileAcknowledgement = (step: ProfilePromptStep, value: string) => 
   }
 };
 
+const mapHistoryMessagesToChatMessages = (historyMessages: ChatHistoryMessage[]): ChatMessage[] =>
+  historyMessages.map((message) => ({
+    id: message.id,
+    author: message.role === "assistant" ? "assistant" : "user",
+    text: message.content,
+  }));
+
 const ChatAssistant = () => {
   const { accessToken, isAuthenticated, isConfigured, isLoading, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -252,6 +261,7 @@ const ChatAssistant = () => {
   const promptedProfileStepRef = useRef<string | null>(null);
   const streamAbortRef = useRef<AbortController | null>(null);
   const streamedSessionIdRef = useRef<string | null>(null);
+  const loadedHistoryKeyRef = useRef<string | null>(null);
 
   const canSend = useMemo(() => input.trim().length > 0, [input]);
   const statusText = useMemo(() => {
@@ -345,6 +355,7 @@ const ChatAssistant = () => {
       streamAbortRef.current?.abort();
       streamAbortRef.current = null;
       streamedSessionIdRef.current = null;
+      loadedHistoryKeyRef.current = null;
       setAgentStreamStatus(null);
       setProfile(null);
       setProfilePromptStep(null);
@@ -391,6 +402,43 @@ const ChatAssistant = () => {
       isCancelled = true;
     };
   }, [isAuthenticated, isConfigured, isOpen, profilePromptStep, user?.id]);
+
+  useEffect(() => {
+    if (!isAsyncChatTransportEnabled) return;
+    if (!isConfigured || !isAuthenticated || !accessToken || !user?.id) return;
+    if (!isOpen) return;
+
+    const historyKey = `${user.id}:${sessionId}`;
+    if (loadedHistoryKeyRef.current === historyKey) return;
+
+    let isCancelled = false;
+
+    const loadChatHistory = async () => {
+      try {
+        const historyMessages = await fetchChatHistory(sessionId);
+        if (isCancelled) return;
+
+        loadedHistoryKeyRef.current = historyKey;
+
+        if (historyMessages.length === 0) {
+          setMessages([{ id: "a-1", author: "assistant", text: initialAssistantText }]);
+          return;
+        }
+
+        setMessages(mapHistoryMessagesToChatMessages(historyMessages));
+      } catch (error) {
+        if (isCancelled) return;
+
+        console.error("chat-history-load-error", error);
+      }
+    };
+
+    void loadChatHistory();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [accessToken, isAuthenticated, isConfigured, isOpen, sessionId, user?.id]);
 
   const handleProfilePromptAnswer = async (text: string) => {
     if (!profilePromptStep || !user?.id) {

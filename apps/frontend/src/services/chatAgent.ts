@@ -17,6 +17,16 @@ export type ChatReply = {
   sessionId: string;
 };
 
+export type ChatHistoryMessage = {
+  id: string;
+  sessionId: string;
+  userId: string;
+  role: "user" | "assistant";
+  content: string;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+};
+
 export type ChatStreamEvent =
   | {
       type: "connected";
@@ -409,6 +419,65 @@ export const subscribeToAgentEvents = async ({
       onEvent(event);
     }
   }
+};
+
+export const fetchChatHistory = async (
+  sessionId: string,
+): Promise<ChatHistoryMessage[]> => {
+  if (!apiBaseUrl) {
+    throw new Error("VITE_API_URL nao configurado para o historico do concierge.");
+  }
+
+  const accessToken = await getAccessToken();
+
+  const response = await fetch(
+    `${apiBaseUrl}/api/chat/history/${encodeURIComponent(sessionId)}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (!response.ok) {
+    let errorMessage =
+      "Nao consegui carregar o historico desta conversa agora. Tente novamente em instantes.";
+
+    try {
+      if (contentType.includes("application/json")) {
+        const body = (await response.json()) as unknown;
+        errorMessage = extractErrorMessage(body) || errorMessage;
+      } else {
+        const rawText = (await response.text()).trim();
+        if (rawText) errorMessage = rawText;
+      }
+    } catch {
+      // Keep default message when the backend error response is unreadable.
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  const body = (await response.json()) as
+    | {
+        sessionId?: string;
+        messages?: ChatHistoryMessage[];
+      }
+    | null;
+
+  if (!Array.isArray(body?.messages)) {
+    return [];
+  }
+
+  return body.messages.filter(
+    (message): message is ChatHistoryMessage =>
+      typeof message?.id === "string" &&
+      (message?.role === "user" || message?.role === "assistant") &&
+      typeof message?.content === "string",
+  );
 };
 
 export const sendMessageToAgent = async (payload: ChatPayload): Promise<ChatReply> => {
