@@ -18,33 +18,42 @@ export const registerChatMessagesRoute = (app: FastifyInstance) => {
   app.post<{ Body: ChatMessagesRequestBody }>(
     "/api/chat/messages",
     async (request, reply) => {
+      let stage = "start";
+      let sessionId: string | null = null;
+
       try {
+        stage = "require-access-token";
         const accessToken = requireAccessToken(request.headers.authorization);
+        stage = "parse-body";
         const message = request.body.message?.trim();
-        const sessionId = request.body.sessionId?.trim() || crypto.randomUUID();
+        sessionId = request.body.sessionId?.trim() || crypto.randomUUID();
+        const activeSessionId = sessionId;
 
         if (!message) {
           throw new RouteError(400, "message is required.");
         }
 
+        stage = "load-chat-context";
         const chatContext = await getAuthenticatedChatContext(accessToken);
 
+        stage = "register-queued-message";
         chatEventBus.registerQueuedMessage(
-          sessionId,
+          activeSessionId,
           chatContext.userId,
           env.chatBufferWindowMs,
         );
 
+        stage = "dispatch-upstream";
         void callChatWebhook({
           message,
-          sessionId,
+          sessionId: activeSessionId,
           channel: env.n8nChatChannel,
           source: env.n8nChatSource,
           userInfo: chatContext.userInfo,
         })
           .then((upstream) => {
             if (upstream.reply) {
-              chatEventBus.publishReply(sessionId, upstream.reply);
+              chatEventBus.publishReply(activeSessionId, upstream.reply);
             }
           })
           .catch((error) => {
@@ -53,16 +62,28 @@ export const registerChatMessagesRoute = (app: FastifyInstance) => {
                 ? error.message
                 : "Nao foi possivel concluir a resposta da Lia.";
 
-            chatEventBus.publishError(sessionId, fallbackMessage);
+            console.error("chat-messages-upstream-error", {
+              sessionId: activeSessionId,
+              error,
+            });
+            chatEventBus.publishError(activeSessionId, fallbackMessage);
           });
 
+        stage = "send-accepted";
         return reply.code(202).send({
           accepted: true,
-          sessionId,
+          sessionId: activeSessionId,
           status: "buffering",
           bufferWindowMs: env.chatBufferWindowMs,
         });
       } catch (error) {
+        console.error("chat-messages-route-error", {
+          stage,
+          sessionId,
+          hasAuthorizationHeader: Boolean(request.headers.authorization),
+          hasMessage: Boolean(request.body.message?.trim()),
+          error,
+        });
         return sendRouteError(reply, error);
       }
     },
