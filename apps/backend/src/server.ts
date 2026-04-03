@@ -3,6 +3,7 @@ import Fastify from "fastify";
 import { env } from "./config/env.js";
 import { registerChatCallbackRoute } from "./routes/chat-callback.js";
 import { registerChatEventsRoute } from "./routes/chat-events.js";
+import { registerChatHistoryRoute } from "./routes/chat-history.js";
 import { registerChatMessagesRoute } from "./routes/chat-messages.js";
 import { registerChatRoute } from "./routes/chat.js";
 
@@ -30,6 +31,7 @@ app.get("/healthz", async () => ({
 
 registerChatRoute(app);
 registerChatMessagesRoute(app);
+registerChatHistoryRoute(app);
 registerChatEventsRoute(app);
 registerChatCallbackRoute(app);
 

@@ -25,6 +25,7 @@ export const env = {
   allowedOrigin: readEnv("ALLOWED_ORIGIN") || "*",
   supabaseUrl: readEnv("SUPABASE_URL"),
   supabaseAnonKey: readEnv("SUPABASE_ANON_KEY"),
+  supabaseServiceRoleKey: readEnv("SUPABASE_SERVICE_ROLE_KEY"),
   n8nChatWebhookUrl: readEnv("N8N_CHAT_WEBHOOK_URL"),
   n8nChatCallbackSecret: readEnv("N8N_CHAT_CALLBACK_SECRET"),
   n8nChatChannel: readEnv("N8N_CHAT_CHANNEL") || "web",

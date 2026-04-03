@@ -7,6 +7,11 @@ import {
   requireAccessToken,
 } from "../services/chat-auth.js";
 import { chatEventBus } from "../services/chat-events.js";
+import {
+  appendChatMessage,
+  ensureChatSession,
+  isChatHistoryEnabled,
+} from "../services/chat-history.js";
 import { callChatWebhook } from "../services/chat-upstream.js";
 
 type ChatMessagesRequestBody = {
@@ -42,6 +47,34 @@ export const registerChatMessagesRoute = (app: FastifyInstance) => {
           chatContext.userId,
           env.chatBufferWindowMs,
         );
+
+        if (isChatHistoryEnabled()) {
+          stage = "persist-user-message";
+
+          try {
+            await ensureChatSession({
+              sessionId: activeSessionId,
+              userId: chatContext.userId,
+              title: message,
+            });
+
+            await appendChatMessage({
+              sessionId: activeSessionId,
+              userId: chatContext.userId,
+              role: "user",
+              content: message,
+              metadata: {
+                channel: env.n8nChatChannel,
+                source: env.n8nChatSource,
+              },
+            });
+          } catch (historyError) {
+            console.error("chat-history-user-message-persist-error", {
+              sessionId: activeSessionId,
+              error: historyError,
+            });
+          }
+        }
 
         stage = "dispatch-upstream";
         void callChatWebhook({

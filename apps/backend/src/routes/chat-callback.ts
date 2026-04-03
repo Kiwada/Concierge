@@ -3,6 +3,11 @@ import { env } from "../config/env.js";
 import { sendRouteError } from "../lib/reply.js";
 import { RouteError } from "../lib/route-error.js";
 import { chatEventBus } from "../services/chat-events.js";
+import {
+  appendChatMessage,
+  getChatSessionOwnerUserId,
+  isChatHistoryEnabled,
+} from "../services/chat-history.js";
 
 type ChatCallbackStatus = "buffering" | "processing" | "reply" | "error";
 
@@ -97,6 +102,34 @@ export const registerChatCallbackRoute = (app: FastifyInstance) => {
             }
 
             chatEventBus.publishReply(sessionId, replyText);
+
+            if (isChatHistoryEnabled()) {
+              try {
+                const ownerUserId = await getChatSessionOwnerUserId(sessionId);
+
+                if (!ownerUserId) {
+                  console.error("chat-history-assistant-reply-missing-session-owner", {
+                    sessionId,
+                  });
+                } else {
+                  await appendChatMessage({
+                    sessionId,
+                    userId: ownerUserId,
+                    role: "assistant",
+                    content: replyText,
+                    metadata: {
+                      source: "n8n-callback",
+                    },
+                  });
+                }
+              } catch (historyError) {
+                console.error("chat-history-assistant-reply-persist-error", {
+                  sessionId,
+                  error: historyError,
+                });
+              }
+            }
+
             return reply.code(202).send({
               accepted: true,
               sessionId,
