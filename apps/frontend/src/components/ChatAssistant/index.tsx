@@ -39,15 +39,71 @@ type ProfilePromptStep =
   | "interests"
   | "budget_profile";
 
-const initialAssistantText =
-  "Olá, eu sou Lia, assistente digital. Entre na sua conta para manter o contexto do atendimento e receber respostas personalizadas.";
-
 const SESSION_STORAGE_KEY = "concierge_chat_session_id";
+const MESSAGE_STORAGE_KEY_PREFIX = "concierge_chat_messages:";
 const createSessionId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
   }
   return `web-${Date.now()}`;
+};
+
+const getMessageStorageKey = (sessionId: string) => `${MESSAGE_STORAGE_KEY_PREFIX}${sessionId}`;
+
+const isChatMessage = (value: unknown): value is ChatMessage =>
+  typeof value === "object" &&
+  value !== null &&
+  typeof (value as ChatMessage).id === "string" &&
+  ((value as ChatMessage).author === "assistant" || (value as ChatMessage).author === "user") &&
+  typeof (value as ChatMessage).text === "string";
+
+const readCachedMessages = (sessionId: string): ChatMessage[] | null => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const rawValue = window.localStorage.getItem(getMessageStorageKey(sessionId));
+    if (!rawValue) return null;
+
+    const parsedValue = JSON.parse(rawValue) as unknown;
+    if (!Array.isArray(parsedValue)) return null;
+
+    const messages = parsedValue.filter(isChatMessage);
+    return messages.length > 0 ? messages : null;
+  } catch {
+    return null;
+  }
+};
+
+const getPreferredDisplayName = (profile: UserProfile | null, user: { email?: string | null; user_metadata?: { full_name?: string | null } | null } | null) => {
+  const candidateName =
+    profile?.full_name?.trim() ||
+    user?.user_metadata?.full_name?.trim() ||
+    null;
+
+  if (candidateName) {
+    return candidateName.split(/\s+/)[0] ?? candidateName;
+  }
+
+  const emailPrefix = user?.email?.split("@")[0]?.trim();
+  return emailPrefix || null;
+};
+
+const buildInitialAssistantText = ({
+  isConfigured,
+  isAuthenticated,
+  displayName,
+}: {
+  isConfigured: boolean;
+  isAuthenticated: boolean;
+  displayName: string | null;
+}) => {
+  if (isConfigured && isAuthenticated) {
+    const greetingName = displayName ? `${displayName}, ` : "";
+
+    return `${greetingName}seja muito bem-vindo. Sou Lia, sua concierge digital. Estou pronta para ajudar com hospedagem, roteiros, experiências e recomendações personalizadas no litoral do Piauí.`;
+  }
+
+  return "Olá, eu sou Lia, assistente digital. Entre na sua conta para manter o contexto do atendimento e receber respostas personalizadas.";
 };
 
 const PROFILE_STEP_PROMPTS: Record<ProfilePromptStep, string> = {
@@ -244,7 +300,7 @@ const ChatAssistant = () => {
   const [isSending, setIsSending] = useState(false);
   const [agentStreamStatus, setAgentStreamStatus] = useState<AgentStreamStatus>(null);
   const [profilePromptStep, setProfilePromptStep] = useState<ProfilePromptStep | null>(null);
-  const [, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [sessionId, setSessionId] = useState(() => {
     if (typeof window === "undefined") return createSessionId();
     const existing = window.localStorage.getItem(SESSION_STORAGE_KEY);
@@ -253,9 +309,20 @@ const ChatAssistant = () => {
     window.localStorage.setItem(SESSION_STORAGE_KEY, generated);
     return generated;
   });
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: "a-1", author: "assistant", text: initialAssistantText },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(
+    () =>
+      readCachedMessages(sessionId) ?? [
+        {
+          id: "a-1",
+          author: "assistant",
+          text: buildInitialAssistantText({
+            isConfigured: false,
+            isAuthenticated: false,
+            displayName: null,
+          }),
+        },
+      ],
+  );
   const endRef = useRef<HTMLDivElement | null>(null);
   const isOpenRef = useRef(isOpen);
   const promptedProfileStepRef = useRef<string | null>(null);
@@ -264,6 +331,19 @@ const ChatAssistant = () => {
   const loadedHistoryKeyRef = useRef<string | null>(null);
 
   const canSend = useMemo(() => input.trim().length > 0, [input]);
+  const displayName = useMemo(
+    () => getPreferredDisplayName(profile, user),
+    [profile, user],
+  );
+  const initialAssistantText = useMemo(
+    () =>
+      buildInitialAssistantText({
+        isConfigured,
+        isAuthenticated,
+        displayName,
+      }),
+    [displayName, isAuthenticated, isConfigured],
+  );
   const statusText = useMemo(() => {
     if (!agentStreamStatus) return null;
 
@@ -286,6 +366,27 @@ const ChatAssistant = () => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
   }, [sessionId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    window.localStorage.setItem(getMessageStorageKey(sessionId), JSON.stringify(messages));
+  }, [messages, sessionId]);
+
+  useEffect(() => {
+    setMessages((currentMessages) => {
+      if (
+        currentMessages.length !== 1 ||
+        currentMessages[0]?.id !== "a-1" ||
+        currentMessages[0]?.author !== "assistant" ||
+        currentMessages[0]?.text === initialAssistantText
+      ) {
+        return currentMessages;
+      }
+
+      return [{ id: "a-1", author: "assistant", text: initialAssistantText }];
+    });
+  }, [initialAssistantText]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -404,6 +505,16 @@ const ChatAssistant = () => {
   }, [isAuthenticated, isConfigured, isOpen, profilePromptStep, user?.id]);
 
   useEffect(() => {
+    const cachedMessages = readCachedMessages(sessionId);
+    if (!cachedMessages) {
+      setMessages([{ id: "a-1", author: "assistant", text: initialAssistantText }]);
+      return;
+    }
+
+    setMessages(cachedMessages);
+  }, [sessionId]);
+
+  useEffect(() => {
     if (!isAsyncChatTransportEnabled) return;
     if (!isConfigured || !isAuthenticated || !accessToken || !user?.id) return;
     if (!isOpen) return;
@@ -421,7 +532,6 @@ const ChatAssistant = () => {
         loadedHistoryKeyRef.current = historyKey;
 
         if (historyMessages.length === 0) {
-          setMessages([{ id: "a-1", author: "assistant", text: initialAssistantText }]);
           return;
         }
 
