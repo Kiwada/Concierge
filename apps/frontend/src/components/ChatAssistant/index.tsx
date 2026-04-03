@@ -55,7 +55,7 @@ const PROFILE_STEP_PROMPTS: Record<ProfilePromptStep, string> = {
   interests:
     "Ótimo. O que mais combina com você no litoral: praia, gastronomia, passeio de barco, aventura ou descanso? Pode citar mais de um.",
   budget_profile:
-    "Para eu filtrar melhor as sugestões, seu orçamento costuma ser econômico, médio ou premium?",
+    "Para eu filtrar melhor as sugestões, seu orçamento costuma ser econômico, médio, alto padrão ou luxo?",
 };
 
 const normalizeText = (value: string) =>
@@ -119,8 +119,12 @@ const normalizeBudgetProfile = (value: string): string => {
     return "medio";
   }
 
-  if (/(premium|alto padrao|luxo|sofisticado)/.test(normalized)) {
-    return "premium";
+  if (/(premium|alto padrao|sofisticado)/.test(normalized)) {
+    return "alto";
+  }
+
+  if (/(luxo|luxuoso|luxuosa)/.test(normalized)) {
+    return "luxo";
   }
 
   return value.trim().toLowerCase();
@@ -141,6 +145,10 @@ const formatBudgetLabel = (budgetProfile: string | null) => {
       return "orçamento econômico";
     case "medio":
       return "orçamento médio";
+    case "alto":
+      return "orçamento de alto padrão";
+    case "luxo":
+      return "orçamento de luxo";
     case "premium":
       return "orçamento premium";
     default:
