@@ -39,7 +39,7 @@ type ProfilePromptStep =
   | "interests"
   | "budget_profile";
 
-const SESSION_STORAGE_KEY = "concierge_chat_session_id";
+const SESSION_STORAGE_KEY_PREFIX = "concierge_chat_session_id:";
 const MESSAGE_STORAGE_KEY_PREFIX = "concierge_chat_messages:";
 const createSessionId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -48,6 +48,7 @@ const createSessionId = () => {
   return `web-${Date.now()}`;
 };
 
+const getSessionStorageKey = (identityKey: string) => `${SESSION_STORAGE_KEY_PREFIX}${identityKey}`;
 const getMessageStorageKey = (sessionId: string) => `${MESSAGE_STORAGE_KEY_PREFIX}${sessionId}`;
 
 const isChatMessage = (value: unknown): value is ChatMessage =>
@@ -303,11 +304,8 @@ const ChatAssistant = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [sessionId, setSessionId] = useState(() => {
     if (typeof window === "undefined") return createSessionId();
-    const existing = window.localStorage.getItem(SESSION_STORAGE_KEY);
-    if (existing) return existing;
-    const generated = createSessionId();
-    window.localStorage.setItem(SESSION_STORAGE_KEY, generated);
-    return generated;
+
+    return createSessionId();
   });
   const [messages, setMessages] = useState<ChatMessage[]>(
     () =>
@@ -331,6 +329,10 @@ const ChatAssistant = () => {
   const loadedHistoryKeyRef = useRef<string | null>(null);
 
   const canSend = useMemo(() => input.trim().length > 0, [input]);
+  const chatIdentityKey = useMemo(
+    () => (isConfigured && isAuthenticated && user?.id ? `user:${user.id}` : "guest"),
+    [isAuthenticated, isConfigured, user?.id],
+  );
   const displayName = useMemo(
     () => getPreferredDisplayName(profile, user),
     [profile, user],
@@ -364,14 +366,39 @@ const ChatAssistant = () => {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
-  }, [sessionId]);
+
+    const storageKey = getSessionStorageKey(chatIdentityKey);
+    const existingSessionId = window.localStorage.getItem(storageKey);
+
+    if (existingSessionId && existingSessionId !== sessionId) {
+      setSessionId(existingSessionId);
+      return;
+    }
+
+    if (!existingSessionId) {
+      window.localStorage.setItem(storageKey, sessionId);
+    }
+  }, [chatIdentityKey, sessionId]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     window.localStorage.setItem(getMessageStorageKey(sessionId), JSON.stringify(messages));
   }, [messages, sessionId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const storageKey = getSessionStorageKey(chatIdentityKey);
+    const storedSessionId = window.localStorage.getItem(storageKey);
+    const nextSessionId = storedSessionId || createSessionId();
+
+    window.localStorage.setItem(storageKey, nextSessionId);
+
+    if (nextSessionId !== sessionId) {
+      setSessionId(nextSessionId);
+    }
+  }, [chatIdentityKey, sessionId]);
 
   useEffect(() => {
     setMessages((currentMessages) => {
@@ -387,6 +414,17 @@ const ChatAssistant = () => {
       return [{ id: "a-1", author: "assistant", text: initialAssistantText }];
     });
   }, [initialAssistantText]);
+
+  useEffect(() => {
+    streamAbortRef.current?.abort();
+    streamAbortRef.current = null;
+    streamedSessionIdRef.current = null;
+    loadedHistoryKeyRef.current = null;
+    setAgentStreamStatus(null);
+    setProfile(null);
+    setProfilePromptStep(null);
+    promptedProfileStepRef.current = null;
+  }, [chatIdentityKey]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
