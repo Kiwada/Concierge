@@ -32,7 +32,7 @@ export const registerChatMessagesRoute = (app: FastifyInstance) => {
         stage = "parse-body";
         const message = request.body.message?.trim();
         sessionId = request.body.sessionId?.trim() || crypto.randomUUID();
-        const activeSessionId = sessionId;
+        let activeSessionId = sessionId;
 
         if (!message) {
           throw new RouteError(400, "message is required.");
@@ -42,11 +42,34 @@ export const registerChatMessagesRoute = (app: FastifyInstance) => {
         const chatContext = await getAuthenticatedChatContext(accessToken);
 
         stage = "register-queued-message";
-        chatEventBus.registerQueuedMessage(
-          activeSessionId,
-          chatContext.userId,
-          env.chatBufferWindowMs,
-        );
+        try {
+          chatEventBus.registerQueuedMessage(
+            activeSessionId,
+            chatContext.userId,
+            env.chatBufferWindowMs,
+          );
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            error.message === "chat-session-owner-mismatch"
+          ) {
+            console.warn("chat-session-owner-mismatch-reset", {
+              previousSessionId: activeSessionId,
+              userId: chatContext.userId,
+            });
+
+            activeSessionId = crypto.randomUUID();
+            sessionId = activeSessionId;
+
+            chatEventBus.registerQueuedMessage(
+              activeSessionId,
+              chatContext.userId,
+              env.chatBufferWindowMs,
+            );
+          } else {
+            throw error;
+          }
+        }
 
         if (isChatHistoryEnabled()) {
           stage = "persist-user-message";
